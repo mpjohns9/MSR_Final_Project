@@ -1,0 +1,11 @@
+<launch>
+  <arg name="viz" default="both"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch" unless="$(eval arg('viz') == 'rviz')">
+    <arg name="paused" value="true"/>
+  </include>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find maze_gen)/config/maze.rviz" unless="$(eval arg('viz') == 'gazebo')"/>
+  <node name="maze" pkg="maze_gen" type="maze" output="screen"/>
+
+</launch>
