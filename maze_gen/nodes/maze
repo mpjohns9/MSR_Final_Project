@@ -1,0 +1,69 @@
+#!/usr/bin/env python
+
+import rospy
+from visualization_msgs.msg import MarkerArray, Marker
+import generate.generate_maze as mg
+
+class Maze:
+
+    def __init__(self):
+        self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
+        self.markers = []
+        self.ma = MarkerArray()
+        self.r = rospy.Rate(0.1)
+
+    def create_markers(self):
+        m = mg.generate_maze('easy')
+
+        id = 0
+        for y, row in enumerate(m):
+            for x, c in enumerate(row):
+                if c == 0:
+
+                    marker = Marker()
+                    marker.header.frame_id = 'map'
+                    marker.id = id
+                    marker.type = marker.CUBE
+                    marker.action = marker.ADD
+                    marker.scale.x = 0.2
+                    marker.scale.y = 0.2
+                    marker.scale.z = 0.1
+                    marker.color.r = 1.0
+                    marker.color.g = 0.0
+                    marker.color.b = 0.0
+                    marker.color.a = 1.0
+                    marker.pose.orientation.w = 1.0
+                    marker.pose.position.x = x/5
+                    marker.pose.position.y = y/5
+                    marker.pose.position.z = 0
+
+                    self.markers.append(marker)
+                    # rospy.logerr('MARKER')
+                    # rospy.logerr(marker)
+                    # rospy.logerr('__________________________________')
+                    self.marker_pub.publish(marker)
+                    id += 1
+        # self.ma.markers = self.markers
+
+        # id = 0
+        # for m in self.ma.markers:
+        #     m.id = id
+        #     id += 1
+            # rospy.logerr(m)
+
+def main():
+    rospy.init_node('maze')
+    maze = Maze()
+    # maze.create_markers()
+    while not rospy.is_shutdown():
+        maze.create_markers()
+        # rospy.logerr(maze.markers)
+        # maze.marker_pub.publish(maze.ma)
+        maze.r.sleep()
+
+if __name__ == '__main__':
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass
+
