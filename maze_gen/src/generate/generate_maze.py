@@ -1,79 +1,132 @@
 import numpy as np
 import random
 
-def generate_array(difficulty):
-    if difficulty == 'hard':
-        grid = np.zeros(shape=(100, 100), dtype=np.int8)
-    if difficulty == 'medium':
-        grid = np.zeros(shape=(50, 50), dtype=np.int8)
-    if difficulty == 'easy':
-        grid = np.zeros(shape=(10, 10), dtype=np.int8)
-    return grid
+class MazeGeneration:
 
-def mark(x, y, grid, frontier):
-    grid[x, y] = 1
-    if (grid[x-1, y] == 0) and (x-1 > 0):
-        if (x-1, y) not in frontier:
-            frontier.append((x-1, y))
-    if (grid[x+1, y] == 0) and (x+1 < grid.shape[1]-1):
-        if (x+1, y) not in frontier:
-            frontier.append((x+1, y))
-    if (grid[x, y-1] == 0) and (y-1 > 0):
-        if (x, y-1) not in frontier:
-            frontier.append((x, y-1))
-    if (grid[x, y+1] == 0) and (y+1 < grid.shape[0]-1):
-        if (x, y+1) not in frontier:
-            frontier.append((x, y+1))
-    return grid, frontier
+    def __init__(self):
 
-def neighbors(x, y, grid):
-    n = []
+        self.tiles = {
+            'easy':
+            [
+                np.array([
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1]
+                [1, 1, 0, 0, 0, 0],
+                [1, 1, 0, 0, 0, 0],
+                [1, 1, 0, 0, 1, 1],
+                [1, 1, 0, 0, 1, 1]]),
+                np.array([
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1]
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1]]),   
+            ],
+            'medium':
+            [
+                np.array([
+                [1, 1, 1, 1, 1, 0],
+                [1, 1, 1, 1, 0, 0]
+                [1, 1, 1, 0, 0, 1],
+                [1, 1, 0, 0, 1, 1],
+                [1, 0, 0, 1, 1, 1],
+                [0, 0, 1, 1, 1, 1]]),
+                np.array([
+                [1, 1, 1, 1, 1, 0],
+                [1, 1, 1, 1, 0, 0]
+                [1, 1, 1, 0, 0, 1],
+                [1, 1, 0, 0, 1, 1],
+                [1, 1, 0, 0, 1, 1],
+                [1, 1, 0, 0, 1, 1]]),   
+            ],
+            'hard':
+            [
+                np.array([
+                [1, 1, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1]
+                [0, 0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0, 0],
+                [1, 1, 0, 0, 1, 1],
+                [1, 1, 0, 0, 1, 1]]),
+                np.zeros(shape=(6, 6)),   
+            ],
+        }
+        
 
-    if (x > 0) and (grid[x-1, y] == 1):
-        n.append((x-1, y))
-    if (x < grid.shape[0]-1) and (grid[x+1, y] == 1):
-        n.append((x+1, y))
-    if (y > 0) and (grid[x, y-1] == 1):
-        n.append((x, y-1))
-    if (y < grid.shape[1]-1) and (grid[x, y+1] == 1):
-        n.append((x, y+1))
+    def generate_array(difficulty):
+        if difficulty == 'hard':
+            grid = np.zeros(shape=(100, 100), dtype=np.int8)
+        if difficulty == 'medium':
+            grid = np.zeros(shape=(50, 50), dtype=np.int8)
+        if difficulty == 'easy':
+            grid = np.zeros(shape=(10, 10), dtype=np.int8)
+        return grid
 
-    return n
+    def mark(x, y, grid, frontier):
+        grid[x, y] = 1
+        if (grid[x-1, y] == 0) and (x-1 > 0):
+            if (x-1, y) not in frontier:
+                frontier.append((x-1, y))
+        if (grid[x+1, y] == 0) and (x+1 < grid.shape[1]-1):
+            if (x+1, y) not in frontier:
+                frontier.append((x+1, y))
+        if (grid[x, y-1] == 0) and (y-1 > 0):
+            if (x, y-1) not in frontier:
+                frontier.append((x, y-1))
+        if (grid[x, y+1] == 0) and (y+1 < grid.shape[0]-1):
+            if (x, y+1) not in frontier:
+                frontier.append((x, y+1))
+        return grid, frontier
 
-def generate_maze(difficulty):
-    grid = generate_array(difficulty)
+    def neighbors(x, y, grid):
+        n = []
 
-    start = (random.randint(1, grid.shape[0]-2), random.randint(1, (grid.shape[0]-2)))
+        if (x > 0) and (grid[x-1, y] == 1):
+            n.append((x-1, y))
+        if (x < grid.shape[0]-1) and (grid[x+1, y] == 1):
+            n.append((x+1, y))
+        if (y > 0) and (grid[x, y-1] == 1):
+            n.append((x, y-1))
+        if (y < grid.shape[1]-1) and (grid[x, y+1] == 1):
+            n.append((x, y+1))
 
-    frontier = []
+        return n
 
-    grid, frontier = mark(start[0], start[1], grid, frontier)
+    def generate_maze(difficulty):
+        grid = generate_array(difficulty)
 
-    while len(frontier) > 0:
+        start = (random.randint(1, grid.shape[0]-2), random.randint(1, (grid.shape[0]-2)))
 
-        x, y = frontier.pop(random.randint(0, (len(frontier)-1)))
-        neighbor_list = neighbors(x, y, grid)
-        if len(neighbor_list) == 1:
-            grid, frontier = mark(x, y, grid, frontier)
+        frontier = []
 
-    found = False
-    while found == False:
-        start = (1, random.randint(1, grid.shape[1]-2))
-        end = (8, random.randint(1, grid.shape[0]-2))
-        if (grid[start[0], start[1]]) == 0 and (grid[end[0], end[1]] == 0):
-            found = True
+        grid, frontier = mark(start[0], start[1], grid, frontier)
 
-    grid[start[0], start[1]] = 8
-    grid[end[0], end[1]] = 9
-    return grid
+        while len(frontier) > 0:
 
-def print_maze(grid):
-    for i in range(grid.shape[0]):
-        for each in grid[i]:
-            if each == 1:
-                print('0', end='')
-            else:
-                print('1', end='')
-        print('')
+            x, y = frontier.pop(random.randint(0, (len(frontier)-1)))
+            neighbor_list = neighbors(x, y, grid)
+            if len(neighbor_list) == 1:
+                grid, frontier = mark(x, y, grid, frontier)
 
-# print(generate_maze('easy'))
+        found = False
+        while found == False:
+            start = (1, random.randint(1, grid.shape[1]-2))
+            end = (8, random.randint(1, grid.shape[0]-2))
+            if (grid[start[0], start[1]]) == 0 and (grid[end[0], end[1]] == 0):
+                found = True
+
+        grid[start[0], start[1]] = 8
+        grid[end[0], end[1]] = 9
+        return grid
+
+    def print_maze(grid):
+        for i in range(grid.shape[0]):
+            for each in grid[i]:
+                if each == 1:
+                    print('0', end='')
+                else:
+                    print('1', end='')
+            print('')
+
+    # print(generate_maze('easy'))
