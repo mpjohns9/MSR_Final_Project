@@ -167,8 +167,8 @@ class MazeGeneration:
     def check_validity(self, pos, tile_list):
         constraints = []
         connections = []
-        print('Pos', pos)
-        print('Tile list', tile_list)
+        # print('Pos', pos)
+        # print('Tile list', tile_list)
         if pos < 3:
             constraints.append('t')
             if pos > 0:
@@ -197,8 +197,8 @@ class MazeGeneration:
             constraints.append('l')
         elif (pos-2) % 3 == 0:
             constraints.append('r')
-        print(connections)
-        print(constraints)
+        # print(connections)
+        # print(constraints)
         return constraints, connections
 
     def generate_maze(self, difficulty):
@@ -216,38 +216,38 @@ class MazeGeneration:
 
         selected = []
         for i, loc in enumerate(self.tile_locations):
-            print('Tile', i)
+            # print('Tile', i)
             valid_connection = False
             while not valid_connection:
                 tile_name = list(tiles.keys())[random.randint(0, len(tiles)-1)]
-                print(tile_name)
+                # print(tile_name)
                 tile = tiles[tile_name]['tile']
                 openings = tiles[tile_name]['openings']
                 if len(selected) > 0:
-                    print('SELECTED:', selected)
+                    # print('SELECTED:', selected)
                     constraints, connections = self.check_validity(i, selected)
                     if len(connections) == 0:
                         tile = tiles['filled']['tile']
                         selected.append((tile, tiles['filled']['openings']))
-                        print('Conenction 0 Append')
+                        # print('Conenction 0 Append')
                         valid_connection = True
                     else:
                         if tile_name == 'filled':
-                            print('Skipped filled.')
+                            # print('Skipped filled.')
                             continue
                         orientations = self.get_orientations(openings)
                         orientations = list(zip(range(len(orientations)), orientations))
-                        print(orientations)
+                        # print(orientations)
                         while len(orientations) > 0:
                             orientation = orientations.pop(random.randint(0, len(orientations)-1))
-                            print('Orientation', orientation)
+                            # print('Orientation', orientation)
                             if not any(e in constraints for e in orientation[1]) \
                                 and any(self.connection_map[e] in connections for e in orientation[1]):
 
                                 tile = np.rot90(tile, orientation[0], (1, 0))
                                 openings = self.rotate(openings, orientation[0])
                                 selected.append((tile, openings))
-                                print('Normal append.')
+                                # print('Normal append.')
                                 valid_connection = True
                                 break
                             
@@ -255,12 +255,12 @@ class MazeGeneration:
                     if tile_name == 'filled':
                         continue
                     selected.append((tile, openings))
-                    print('First append.')
+                    # print('First append.')
                     valid_connection = True
                 y2 = loc[0] + tile.shape[0]
                 x2 = loc[1] + tile.shape[1]
                 self.grid[loc[0]:y2, loc[1]:x2] = tile
-        
+        # print(self.grid)
         return self.grid
         
 
@@ -277,7 +277,7 @@ class MazeGeneration:
 
 def main():
     mg = MazeGeneration()
-    print(mg.generate_maze('medium'))
+    print(mg.generate_maze('hard'))
 
 if __name__ == "__main__":
     main()
