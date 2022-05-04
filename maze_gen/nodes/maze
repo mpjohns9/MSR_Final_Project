@@ -2,23 +2,28 @@
 
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
-import generate.generate_maze as mg
+from generate.generate_maze import MazeGeneration
 
 class Maze:
 
     def __init__(self):
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
+        self.difficulty = rospy.get_param('~difficulty')
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(0.1)
+        self.r = rospy.Rate(0.5)
 
     def create_markers(self):
-        m = mg.generate_maze('easy')
+        mg = MazeGeneration()
+        m = mg.generate_maze(self.difficulty)
 
         id = 0
+        print('Maze:',m)
         for y, row in enumerate(m):
+            # print('Row:',row)
             for x, c in enumerate(row):
-                if c == 0:
+                # print('Cell:', c)
+                if c == 1:
 
                     marker = Marker()
                     marker.header.frame_id = 'map'
@@ -33,14 +38,14 @@ class Maze:
                     marker.color.b = 0.0
                     marker.color.a = 1.0
                     marker.pose.orientation.w = 1.0
-                    marker.pose.position.x = x/5
-                    marker.pose.position.y = y/5
+                    marker.pose.position.x = x/(len(m)/5) - 2.5
+                    marker.pose.position.y = y/(len(m)/5) - 2.5
                     marker.pose.position.z = 0
 
                     self.markers.append(marker)
-                    # rospy.logerr('MARKER')
-                    # rospy.logerr(marker)
-                    # rospy.logerr('__________________________________')
+                    rospy.logerr('MARKER')
+                    rospy.logerr(marker)
+                    rospy.logerr('__________________________________')
                     self.marker_pub.publish(marker)
                     id += 1
         # self.ma.markers = self.markers
