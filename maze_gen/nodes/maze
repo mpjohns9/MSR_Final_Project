@@ -3,15 +3,23 @@
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
+from gazebo_msgs.srv import SpawnModel
+from geometry_msgs.msg import Pose
 
 class Maze:
 
     def __init__(self):
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
+        self.spawn_model = rospy.ServiceProxy('gazebo/spawn_sdf_model', SpawnModel)
         self.difficulty = rospy.get_param('~difficulty')
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(0.5)
+        self.r = rospy.Rate(0.001)
+
+        with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/config/wall.sdf', 'r') as f:
+            self.wall_xml = f.read()
+
+        rospy.wait_for_service("gazebo/spawn_sdf_model")
 
     def create_markers(self):
         mg = MazeGeneration()
@@ -37,17 +45,26 @@ class Maze:
                     marker.color.g = 0.0
                     marker.color.b = 0.0
                     marker.color.a = 1.0
-                    marker.pose.orientation.w = 1.0
-                    marker.pose.position.x = x/(len(m)/5) - 2.5
-                    marker.pose.position.y = y/(len(m)/5) - 2.5
-                    marker.pose.position.z = 0
+
+                    p = Pose()
+
+                    p.orientation.w = 1.0
+                    p.position.x = x/(len(m)/5) - 2.5
+                    p.position.y = y/(len(m)/5) - 2.5
+                    p.position.z = 0
+
+                    marker.pose = p
 
                     self.markers.append(marker)
                     rospy.logerr('MARKER')
                     rospy.logerr(marker)
                     rospy.logerr('__________________________________')
                     self.marker_pub.publish(marker)
+                    self.spawn_model(f'wall{id}', self.wall_xml, '', p, 'world')
                     id += 1
+
+
+
         # self.ma.markers = self.markers
 
         # id = 0
