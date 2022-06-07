@@ -3,7 +3,8 @@
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
-from gazebo_msgs.srv import SpawnModel
+from gazebo_msgs.srv import SpawnModel, DeleteModel
+from maze_gen.srv import GenerateMaze
 from geometry_msgs.msg import Pose
 import numpy as np
 
@@ -12,41 +13,60 @@ class Maze:
     def __init__(self):
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
         self.spawn_model = rospy.ServiceProxy('gazebo/spawn_sdf_model', SpawnModel)
-        self.difficulty = rospy.get_param('~difficulty')
+        self.delete_model = rospy.ServiceProxy('gazebo/delete_model', DeleteModel)
+        self.generate_maze = rospy.Service('generate_maze', GenerateMaze, self.create_markers)
+        # self.difficulty = rospy.get_param('~difficulty')
+        self.viz = rospy.get_param('~viz')
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(0.001)
+        self.r = rospy.Rate(0.5)
+        self.maze = None
+        self.mg = MazeGeneration()
 
-        with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/config/wall.sdf', 'r') as f:
-            self.wall_xml = f.read()
+        if self.viz != 'rviz':
+            with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
+                self.wall_xml = f1.read()
 
-        rospy.wait_for_service("gazebo/spawn_sdf_model")
+            with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/sphere.sdf', 'r') as f2:
+                self.sphere_xml = f2.read()
 
-    def create_markers(self):
-        mg = MazeGeneration()
-        m = mg.generate_maze(self.difficulty)
+            rospy.wait_for_service("gazebo/spawn_sdf_model")
 
-        m[4][4] = 4
+    def vel_callback(self, maze):
+        print(self.mg.solve_maze(maze))
+
+    def create_markers(self, difficulty):
+        # rospy.logerr('Generating maze...')
+        self.maze = self.mg.generate_maze(difficulty)
+
+        self.maze[4][4] = 4
 
         end_found = False
         row = -3
         while not end_found:
-            if 2 in m[row]:
-                idx = np.where(m == 2)[0]
+            if 2 in self.maze[row]:
+                # print('index')
+                idx = np.where(self.maze[row] == 2)[0]
+                print(idx)
                 if len(idx) > 1:
-                    m[row][idx[-1] - 3] = 5
+                    print('INDEX:', idx[-1])
+                    self.maze[row][idx[-1]] = 5
                 else:
-                    m[row][idx] = 5
+                    self.maze[row][idx] = 5
                 end_found = True
             row -= 1
 
+        # self.vel_callback(self.maze)
+
         id = 0
-        # print('Maze:',m)
-        for y, row in enumerate(m):
+        print('Maze:',self.maze)
+        for y, row in enumerate(self.maze):
             # print('Row:',row)
             for x, c in enumerate(row):
                 # print('Cell:', c)
                 if c in (1, 4, 5):
+                    # if c == 4:
+                        # print('starting location', x, y)
 
                     marker = Marker()
                     marker.header.frame_id = 'map'
@@ -79,21 +99,33 @@ class Maze:
                     p = Pose()
 
                     p.orientation.w = 1.0
-                    p.position.x = x/(len(m)/5) - 2.5
-                    p.position.y = y/(len(m)/5) - 2.5
+                    p.position.x = x/(len(self.maze)/5) - 2.5
+                    p.position.y = y/(len(self.maze)/5) - 2.5
                     p.position.z = 0
+                    # print(p.position)
 
                     marker.pose = p
+
+                    if self.viz != 'rviz':
+                        if c == 5:
+                            self.delete_model(f'wall{y*len(row) + x}')
+                            self.spawn_model(f'sphere_start', self.sphere_xml, '', p, 'world')
+                        elif c == 4:
+                            self.delete_model(f'wall{y*len(row) + x}')
 
                     self.markers.append(marker)
                     # rospy.logerr('MARKER')
                     # rospy.logerr(marker)
                     # rospy.logerr('__________________________________')
                     self.marker_pub.publish(marker)
-                    self.spawn_model(f'wall{id}', self.wall_xml, '', p, 'world')
+
                     id += 1
 
+                else:
+                    if self.viz != 'rviz':
+                        self.delete_model(f'wall{y*len(row) + x}')
 
+        return []
 
         # self.ma.markers = self.markers
 
@@ -108,7 +140,7 @@ def main():
     maze = Maze()
     # maze.create_markers()
     while not rospy.is_shutdown():
-        maze.create_markers()
+        # maze.create_markers()
         # rospy.logerr(maze.markers)
         # maze.marker_pub.publish(maze.ma)
         maze.r.sleep()
