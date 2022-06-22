@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import time
 
 class MazeGeneration:
 
@@ -171,51 +172,57 @@ class MazeGeneration:
 
     #     return n      
 
-    def check_validity(self, pos, tile_list):
+    def check_validity(self, pos, tile_list, possible_connections):
         constraints = []
         connections = []
+
         # print('Pos', pos)
         # print('Tile list', tile_list)
         if pos < 3:
-            constraints.append('t')
+            constraints.extend(['t'])
             if pos > 0:
                 if not any('r' in o for o in tile_list[-1][1]):
-                    constraints.append('l')
+                    constraints.extend(['l', 'bl', 'tl'])
                 connections = [o for o in tile_list[-1][1] if 'r' in o]
         elif pos > 5:
+            if (pos - 3) not in possible_connections:
+                return constraints, connections
             # constraints.append('b')
             if not any('b' in o for o in tile_list[-3][1]):
-                constraints.append('t')
+                constraints.extend(['t', 'tr', 'tl'])
             connections += [o for o in tile_list[-3][1] if 'b' in o]
             if pos != 6:
                 if not any('r' in o for o in tile_list[-1][1]):
-                    constraints.append('l')
+                    constraints.extend(['l', 'bl', 'tl'])
                 connections += [o for o in tile_list[-1][1] if 'r' in o]
         else:
             if not any('b' in o for o in tile_list[-3][1]):
-                constraints.append('t')
+                constraints.extend(['t', 'tr', 'tl'])
             connections += [o for o in tile_list[-3][1] if 'b' in o]
             if pos != 3:
                 if not any('r' in o for o in tile_list[-1][1]):
-                    constraints.append('l')
+                    constraints.extend(['l', 'bl', 'tl'])
                 connections += [o for o in tile_list[-1][1] if 'r' in o]
         
         if pos % 3 == 0:
-            constraints.append('l')
+            constraints.extend(['l'])
         elif (pos-2) % 3 == 0:
-            constraints.append('r')
+            constraints.extend(['r'])
         # print(connections)
         # print(constraints)
         return constraints, connections
 
     def generate_maze(self, difficulty):
-        # random.seed(42)
+        random.seed(23)
         if difficulty == 'hard':
             diff_list = ['hard', 'medium', 'easy']
         elif difficulty == 'medium':
             diff_list = ['medium', 'easy']
         else:
             diff_list = ['easy']
+
+        path = []
+        possible_connections = list(range(9))
 
         tiles = {}
         for d in diff_list:
@@ -232,11 +239,15 @@ class MazeGeneration:
                 openings = tiles[tile_name]['openings']
                 if len(selected) > 0:
                     # print('SELECTED:', selected)
-                    constraints, connections = self.check_validity(i, selected)
+                    constraints, connections = self.check_validity(i, selected, possible_connections)
+                    # print(constraints)
+                    # print(connections)
+                    time.sleep(1)
                     if len(connections) == 0:
                         tile = tiles['filled']['tile']
                         selected.append((tile, tiles['filled']['openings']))
                         # print('Conenction 0 Append')
+                        possible_connections.remove(i)
                         valid_connection = True
                     else:
                         if tile_name == 'filled':
@@ -250,9 +261,14 @@ class MazeGeneration:
                             # print('Orientation', orientation)
                             if not any(e in constraints for e in orientation[1]) \
                                 and any(self.connection_map[e] in connections for e in orientation[1]):
-
+                                    
                                 tile = np.rot90(tile, orientation[0], (1, 0))
                                 openings = self.rotate(openings, orientation[0])
+
+                                if self.check_path(i, possible_connections):
+                                    path.append(i)
+                                else:
+                                    tile = np.vectorize(lambda x: 0 if x == 2 else x)(tile)
                                 selected.append((tile, openings))
                                 # print('Normal append.')
                                 valid_connection = True
@@ -264,12 +280,183 @@ class MazeGeneration:
                     selected.append((tile, openings))
                     # print('First append.')
                     valid_connection = True
+                    path.append(i)
                 y2 = loc[0] + tile.shape[0]
                 x2 = loc[1] + tile.shape[1]
                 self.grid[loc[0]:y2, loc[1]:x2] = tile
-        # print(self.grid)
+        # print(path)
         return self.grid
+
+    def check_neighbors(self, y, x, maze):
+        if maze[y][x+1] in (2, 5):
+            return 'E', (0, 1)
+        elif maze[y+1][x+1] in (2, 5):
+            return 'SE', (1, 1)
+        elif maze[y+1][x] in (2, 5):
+            return 'S', (1, 0)
+        elif maze[y+1][x-1] in (2, 5):
+            return 'SW', (1, -1)
+        elif maze[y][x-1] in (2, 5):
+            return 'W', (0, -1)
+        elif maze[y-1][x-1] in (2, 5):
+            return 'NW', (-1, -1)
+        elif maze[y-1][x] in (2, 5):
+            return 'N', (-1, 0)
+        elif maze[y-1][x+1] in (2, 5):
+            return 'NE', (-1, 1)
+
+    def get_angular(self, dir, next_dir):
+        if dir == 'S':
+            if next_dir == 'E':
+                return np.pi/4
+            elif next_dir == 'W':
+                return -np.pi/4
+            elif next_dir == 'SE':
+                return np.pi/8
+            elif next_dir == 'SW':
+                return -np.pi/8
+
+        if dir == 'SE':
+            if next_dir == 'NE':
+                return np.pi/4
+            elif next_dir == 'SW':
+                return -np.pi/4
+            elif next_dir == 'E':
+                return np.pi/8
+            elif next_dir == 'S':
+                return -np.pi/8
+
+        if dir == 'E':
+            if next_dir == 'N':
+                return np.pi/4
+            elif next_dir == 'S':
+                return -np.pi/4
+            elif next_dir == 'NE':
+                return np.pi/8
+            elif next_dir == 'SE':
+                return -np.pi/8
+
+        if dir == 'NE':
+            if next_dir == 'NW':
+                return np.pi/4
+            elif next_dir == 'SE':
+                return -np.pi/4
+            elif next_dir == 'N':
+                return np.pi/8
+            elif next_dir == 'E':
+                return -np.pi/8
+
+        if dir == 'N':
+            if next_dir == 'W':
+                return np.pi/4
+            elif next_dir == 'E':
+                return -np.pi/4
+            elif next_dir == 'NW':
+                return np.pi/8
+            elif next_dir == 'NE':
+                return -np.pi/8
+
+        if dir == 'NW':
+            if next_dir == 'SW':
+                return np.pi/4
+            elif next_dir == 'NE':
+                return -np.pi/4
+            elif next_dir == 'W':
+                return np.pi/8
+            elif next_dir == 'N':
+                return -np.pi/8
+
+        if dir == 'W':
+            if next_dir == 'S':
+                return np.pi/4
+            elif next_dir == 'N':
+                return -np.pi/4
+            elif next_dir == 'SW':
+                return np.pi/8
+            elif next_dir == 'NW':
+                return -np.pi/8
         
+        if dir == 'SW':
+            if next_dir == 'SE':
+                return np.pi/4
+            elif next_dir == 'NW':
+                return -np.pi/4
+            elif next_dir == 'S':
+                return np.pi/8
+            elif next_dir == 'W':
+                return -np.pi/8
+
+    def solve_maze(self, maze):
+        # (angular, linear)
+        commands = []
+        loc = (4, 4)
+        dir = 'E'
+
+        while True:
+            # print(maze)
+            print('Current Cell Value:', maze[loc[0]][loc[1]])
+            print('Coordinates:', loc)
+            if maze[loc[0]][loc[1]] == 5:
+                break
+
+            next_dir, movement = self.check_neighbors(loc[0], loc[1], maze)
+            print('Direction:', dir)
+            print('Next Dir:', next_dir)
+            print('Movement:', movement)
+            
+            if next_dir == dir:
+                commands.append((0, 5/46))
+            else:
+                commands.append((self.get_angular(dir, next_dir), 0))
+                commands.append((0, 5/46))
+
+            loc = (loc[0]+movement[0], loc[1]+movement[1])
+            dir = next_dir
+            # print(commands)
+
+        return commands
+
+    def check_path(self, i, possible_connections):
+        if i < 3:
+            possible_connections.remove(i-1)
+            return possible_connections
+        elif i >= 3 and i < 6:
+            if i == 3:
+                if 0 in possible_connections:
+                    possible_connections.remove(0)
+                    return possible_connections
+                else:
+                    possible_connections.remove(i)
+                    return False
+            else:
+                if (i - 1) in possible_connections:
+                    possible_connections.remove(i-1)
+                    return possible_connections
+                elif (i - 3) in possible_connections:
+                    possible_connections.remove(i-3)
+                    return possible_connections
+                else:
+                    possible_connections.remove(i)
+                    return False
+        else:
+            if i == 6:
+                if 3 in possible_connections:
+                    possible_connections.remove(3)
+                    return possible_connections
+                else:
+                    possible_connections.remove(i)
+                    return False
+            else:
+                if (i - 1) in possible_connections:
+                    possible_connections.remove(i-1)
+                    return possible_connections
+                elif (i - 3) in possible_connections:
+                    possible_connections.remove(i-3)
+                    return possible_connections
+                else:
+                    possible_connections.remove(i)
+                    return False
+
 
     def print_maze(grid):
         for i in range(grid.shape[0]):
