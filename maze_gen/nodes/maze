@@ -3,25 +3,32 @@
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
-from gazebo_msgs.srv import SpawnModel, DeleteModel
+from gazebo_msgs.msg import ModelState
+from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState
 from maze_gen.srv import GenerateMaze
-from geometry_msgs.msg import Pose
+from geometry_msgs.msg import Pose, Twist
+from std_srvs.srv import Empty, EmptyResponse
 import numpy as np
 
 class Maze:
 
     def __init__(self):
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
+        self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=100)
         self.spawn_model = rospy.ServiceProxy('gazebo/spawn_sdf_model', SpawnModel)
         self.delete_model = rospy.ServiceProxy('gazebo/delete_model', DeleteModel)
+        self.set_model_state = rospy.ServiceProxy('gazebo/set_model_state', SetModelState)
         self.generate_maze = rospy.Service('generate_maze', GenerateMaze, self.create_markers)
+        self.move = rospy.Service('move', Empty, self.move)
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(0.5)
+        self.r = rospy.Rate(100)
         self.maze = None
         self.mg = MazeGeneration()
+        self.path = []
+        self.moving = False
 
         if self.viz != 'rviz':
             with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
@@ -32,13 +39,14 @@ class Maze:
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
 
-    def vel_callback(self, maze):
-        print(self.mg.solve_maze(maze))
+    def move(self, req):
+        # self.moving = True
+        print(self.path)
 
     def create_markers(self, difficulty):
         # rospy.logerr('Generating maze...')
         self.maze = self.mg.generate_maze(difficulty)
-
+        
         self.maze[4][4] = 4
 
         end_found = False
@@ -56,6 +64,7 @@ class Maze:
                 end_found = True
             row -= 1
 
+        self.path = self.mg.solve_maze(self.maze)
         # self.vel_callback(self.maze)
 
         id = 0
@@ -69,7 +78,7 @@ class Maze:
                         # print('starting location', x, y)
 
                     marker = Marker()
-                    marker.header.frame_id = 'map'
+                    marker.header.frame_id = 'world'
                     marker.id = id
                     marker.action = marker.ADD
                     marker.scale.x = 0.2
@@ -105,13 +114,19 @@ class Maze:
                     # print(p.position)
 
                     marker.pose = p
-
+                    # self.spawn_model(f'wall_{id}', self.wall_xml, '', p, 'world')
                     if self.viz != 'rviz':
-                        if c == 5:
-                            self.delete_model(f'wall{y*len(row) + x}')
-                            self.spawn_model(f'sphere_start', self.sphere_xml, '', p, 'world')
-                        elif c == 4:
-                            self.delete_model(f'wall{y*len(row) + x}')
+                        if c == 1:
+                            ms = ModelState()
+                            ms.model_name = f'wall_{id}'
+                            ms.pose = p
+
+                            self.set_model_state(ms)
+                    #     if c == 5:
+                    #         self.delete_model(f'wall{y*len(row) + x}')
+                    #         self.spawn_model(f'sphere_start', self.sphere_xml, '', p, 'world')
+                    #     elif c == 4:
+                    #         self.delete_model(f'wall{y*len(row) + x}')
 
                     self.markers.append(marker)
                     # rospy.logerr('MARKER')
@@ -121,9 +136,9 @@ class Maze:
 
                     id += 1
 
-                else:
-                    if self.viz != 'rviz':
-                        self.delete_model(f'wall{y*len(row) + x}')
+                # else:
+                #     if self.viz != 'rviz':
+                #         self.delete_model(f'wall{y*len(row) + x}')
 
         return []
 
@@ -140,6 +155,10 @@ def main():
     maze = Maze()
     # maze.create_markers()
     while not rospy.is_shutdown():
+        # if maze.moving:
+        #     v = Twist()
+        #     v.linear.x = 1.0
+        #     maze.vel_pub.publish(v)
         # maze.create_markers()
         # rospy.logerr(maze.markers)
         # maze.marker_pub.publish(maze.ma)
