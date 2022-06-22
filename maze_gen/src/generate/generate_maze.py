@@ -391,6 +391,7 @@ class MazeGeneration:
         commands = []
         loc = (4, 4)
         dir = 'E'
+        waypoint = (-1.630435, -1.630435, 0)
 
         while True:
             # print(maze)
@@ -400,15 +401,17 @@ class MazeGeneration:
                 break
 
             next_dir, movement = self.check_neighbors(loc[0], loc[1], maze)
+            waypoint = (waypoint[0]+(movement[0]*(5/23)), waypoint[1]+(movement[1]*(5/23)))
+            
             print('Direction:', dir)
             print('Next Dir:', next_dir)
             print('Movement:', movement)
-            
+
             if next_dir == dir:
-                commands.append((0, 5/46))
+                commands.append((0, 5/46, waypoint))
             else:
-                commands.append((self.get_angular(dir, next_dir), 0))
-                commands.append((0, 5/46))
+                commands.append((self.get_angular(dir, next_dir), 0, None))
+                commands.append((0, 5/46, waypoint))
 
             loc = (loc[0]+movement[0], loc[1]+movement[1])
             dir = next_dir
