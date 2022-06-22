@@ -4,20 +4,21 @@
 
   <group unless="$(eval arg('viz') == 'rviz')">
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-      <arg name="world_name" value="$(find maze_gen)/worlds/filled.world"/>
-      <arg name="paused" value="true"/>
+      <arg name="world_name" value="$(find maze_gen)/worlds/below_ground.world"/>
+      <arg name="paused" value="false"/>
     </include>
     <param name="robot_description" command="$(find xacro)/xacro $(find maze_gen)/urdf/turtlebot3_burger.urdf.xacro" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+    <!-- <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/> -->
 
-    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x -1.630435 -y -1.630435 -z 0.05 -model robot" />
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x -1.630435 -y -1.630435 -z 0.001 -model robot" />
   </group>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find maze_gen)/config/maze.rviz" unless="$(eval arg('viz') == 'gazebo')"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find maze_gen)/config/maze.rviz" unless="$(eval arg('viz') == 'gazebo')"/>
   <node name="maze" pkg="maze_gen" type="maze" output="screen">
     <!-- <param name="difficulty" value="$(arg difficulty)"/> -->
     <param name="viz" value="$(arg viz)"/>
   </node>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="bf_broadcaster" args="0 0 0 0 0 0 world base_footprint" />
 
 </launch>
