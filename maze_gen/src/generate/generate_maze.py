@@ -308,116 +308,119 @@ class MazeGeneration:
     def get_angular(self, dir, next_dir):
         if dir == 'S':
             if next_dir == 'E':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'W':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'SE':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'SW':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'SE':
             if next_dir == 'NE':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'SW':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'E':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'S':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'E':
             if next_dir == 'N':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'S':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'NE':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'SE':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'NE':
             if next_dir == 'NW':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'SE':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'N':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'E':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'N':
             if next_dir == 'W':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'E':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'NW':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'NE':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'NW':
             if next_dir == 'SW':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'NE':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'W':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'N':
-                return -np.pi/8
+                return np.pi/4
 
         if dir == 'W':
             if next_dir == 'S':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'N':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'SW':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'NW':
-                return -np.pi/8
+                return np.pi/4
         
         if dir == 'SW':
             if next_dir == 'SE':
-                return np.pi/4
+                return -np.pi/2
             elif next_dir == 'NW':
-                return -np.pi/4
+                return np.pi/2
             elif next_dir == 'S':
-                return np.pi/8
+                return -np.pi/4
             elif next_dir == 'W':
-                return -np.pi/8
+                return np.pi/4
 
-    def solve_maze(self, maze):
+    def solve_maze(self, maze, init_position):
         # (angular, linear)
         commands = []
         loc = (4, 4)
         dir = 'E'
-        waypoint = (-1.630435, -1.630435, 0)
+        waypoint = (init_position[0], init_position[1], 0)
 
         while True:
             # print(maze)
-            print('Current Cell Value:', maze[loc[0]][loc[1]])
-            print('Coordinates:', loc)
+            # print('Current Cell Value:', maze[loc[0]][loc[1]])
+            # print('Coordinates:', loc)
             if maze[loc[0]][loc[1]] == 5:
                 break
 
             next_dir, movement = self.check_neighbors(loc[0], loc[1], maze)
-            waypoint = (waypoint[0]+(movement[0]*(5/23)), waypoint[1]+(movement[1]*(5/23)))
             
-            print('Direction:', dir)
-            print('Next Dir:', next_dir)
-            print('Movement:', movement)
+            # print('Direction:', dir)
+            # print('Next Dir:', next_dir)
+            # print('Movement:', movement)
 
             if next_dir == dir:
-                commands.append((0, 5/46, waypoint))
+                commands.append((0, 5/46, movement))
             else:
-                commands.append((self.get_angular(dir, next_dir), 0, None))
-                commands.append((0, 5/46, waypoint))
+                commands.append((self.get_angular(dir, next_dir)/4, 0, movement))
+                commands.append((0, 5/46, movement))
 
             loc = (loc[0]+movement[0], loc[1]+movement[1])
             dir = next_dir
             # print(commands)
 
         return commands
+
+    def generate_waypoint(self, current_position, movement):
+        waypoint = (current_position[0]+(movement[1]*(5/23)), current_position[1]+(movement[0]*(5/23)))
+        return waypoint
 
     def check_path(self, i, possible_connections):
         if i < 3:
