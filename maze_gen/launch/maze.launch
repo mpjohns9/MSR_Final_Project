@@ -14,7 +14,7 @@
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-param robot_description -urdf -x -1.630435 -y -1.630435 -z 0 -R 0 -P 0 -Y 0 -model robot" />
   </group>
 
-  <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find maze_gen)/config/maze.rviz" unless="$(eval arg('viz') == 'gazebo')"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-f world -d $(find maze_gen)/config/camera_view.rviz" unless="$(eval arg('viz') == 'gazebo')"/>
   <node name="maze" pkg="maze_gen" type="maze" output="screen">
     <!-- <param name="difficulty" value="$(arg difficulty)"/> -->
     <param name="viz" value="$(arg viz)"/>
