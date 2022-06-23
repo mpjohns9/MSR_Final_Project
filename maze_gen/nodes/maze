@@ -8,13 +8,16 @@ from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState
 from maze_gen.srv import GenerateMaze
 from geometry_msgs.msg import Pose, Twist
 from std_srvs.srv import Empty, EmptyResponse
+from nav_msgs.msg import Odometry
 import numpy as np
+import tf
 
 class Maze:
 
     def __init__(self):
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=100)
+        self.pose = rospy.Subscriber('odom', Odometry, self.get_pose)
         self.spawn_model = rospy.ServiceProxy('gazebo/spawn_sdf_model', SpawnModel)
         self.delete_model = rospy.ServiceProxy('gazebo/delete_model', DeleteModel)
         self.set_model_state = rospy.ServiceProxy('gazebo/set_model_state', SetModelState)
@@ -25,10 +28,13 @@ class Maze:
         self.markers = []
         self.ma = MarkerArray()
         self.r = rospy.Rate(100)
-        self.maze = None
+        self.maze = []
         self.mg = MazeGeneration()
         self.path = []
-        self.moving = False
+        self.velocity = (0, 0) # (angular, linear)
+        self.waypoint = None
+        self.position = None
+        self.orientation = None
 
         if self.viz != 'rviz':
             with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
@@ -39,9 +45,47 @@ class Maze:
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
 
+    def get_pose(self, p):
+        pos = p.pose.pose.position
+        orient = [
+            p.pose.pose.orientation.x,
+            p.pose.pose.orientation.y,
+            p.pose.pose.orientation.z,
+            p.pose.pose.orientation.w
+        ]
+        self.position = (pos.x, pos.y)
+        self.orientation = tf.transformations.euler_from_quaternion(orient)[2]
+
     def move(self, req):
-        # self.moving = True
-        print(self.path)
+        if len(self.maze) > 0:
+            self.path = self.mg.solve_maze(self.maze, self.position)
+            self.set_next_command()
+        else:
+            rospy.logerr('No maze has been built. Generate maze first (/generate_maze) and try again.')
+
+    def set_next_command(self):
+        p = self.path.pop(0)
+        self.velocity = (p[0], p[1])
+
+        coords = self.mg.generate_waypoint(self.position, p[2])
+        self.waypoint = (*coords, self.orientation+(p[0]*4))
+
+    def generate_vel(self):
+        print('Current Pos:', self.position)
+        print('Waypoint:', self.waypoint)
+        if self.velocity[0] == 0:
+            if np.abs(self.waypoint[0]-self.position[0]) > 0.01 or \
+                    np.abs(self.waypoint[1]-self.position[1]) > 0.01:
+                return
+            else:
+                self.set_next_command()
+        else:
+            rospy.logerr(f'Orientation: {self.orientation}')
+            rospy.logerr(f'Waypoint: {self.waypoint[2]}')
+            if np.abs(self.orientation-self.waypoint[2]) > 0.01:
+                return
+            else:
+                self.set_next_command()
 
     def create_markers(self, difficulty):
         # rospy.logerr('Generating maze...')
@@ -64,7 +108,6 @@ class Maze:
                 end_found = True
             row -= 1
 
-        self.path = self.mg.solve_maze(self.maze)
         # self.vel_callback(self.maze)
 
         id = 0
@@ -154,11 +197,18 @@ def main():
     rospy.init_node('maze')
     maze = Maze()
     # maze.create_markers()
+    v = Twist()
     while not rospy.is_shutdown():
         # if maze.moving:
-        #     v = Twist()
-        #     v.linear.x = 1.0
-        #     maze.vel_pub.publish(v)
+        if len(maze.path) > 0:
+            maze.generate_vel()
+            v.linear.x = maze.velocity[1]
+            v.angular.z = maze.velocity[0]
+            maze.vel_pub.publish(v)
+        else:
+            v.linear.x = 0
+            v.angular.z = 0
+            maze.vel_pub.publish(v)
         # maze.create_markers()
         # rospy.logerr(maze.markers)
         # maze.marker_pub.publish(maze.ma)
