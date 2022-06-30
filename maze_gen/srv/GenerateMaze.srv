@@ -1,1 +1,1 @@
-string difficulty  # difficulty of maze to be generated
+int8 difficulty  # difficulty of maze to be generated

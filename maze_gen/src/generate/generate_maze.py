@@ -175,14 +175,15 @@ class MazeGeneration:
 
     #     return n      
 
-    def check_validity(self, pos, tile_list, possible_connections):
+    def check_validity(self, pos, tile_list, difficulty, possible_connections):
         constraints = []
         connections = dict(side=[], top=[])
 
         # print('Pos', pos)
         # print('Tile list', tile_list)
         if pos < 3:
-            # constraints.extend(['t', 'tr', 'tl'])
+            if difficulty == 0:
+                constraints.extend(['t', 'tr', 'tl'])
             if pos > 0:
                 if not any('r' in o for o in tile_list[-1][1]):
                     constraints.extend(['l', 'bl', 'tl'])
@@ -228,9 +229,9 @@ class MazeGeneration:
 
     def generate_maze(self, difficulty):
         # random.seed(23)
-        if difficulty == 'hard':
+        if difficulty == 2:
             diff_list = ['hard', 'medium', 'easy']
-        elif difficulty == 'medium':
+        elif difficulty == 1:
             diff_list = ['medium', 'easy']
         else:
             diff_list = ['easy']
@@ -259,7 +260,7 @@ class MazeGeneration:
                 openings = tiles[tile_name]['openings']
                 if len(selected) > 0:
                     print('SELECTED:', selected)
-                    constraints, connections = self.check_validity(i, selected, 
+                    constraints, connections = self.check_validity(i, selected, difficulty, 
                                                                     possible_connections)
                     print('Constraints:', constraints)
                     print('Connections:', connections)
@@ -319,24 +320,25 @@ class MazeGeneration:
                 # y2 = loc[0] + tile.shape[0]
                 # x2 = loc[1] + tile.shape[1]
                 # self.grid[loc[0]:y2, loc[1]:x2] = tile
-                
-        print(f'CHECKING DIFFICULTY ({difficulty})')
-        remake = False
-        for tile in selected:
-            if difficulty == 'medium':
-                print(tile[2])
-                if 'angle' in tile[2]:
-                    break
-                
-            elif difficulty == 'hard':
-                if tile[2] in ('t', 'open'):
-                    break
+        print(difficulty == 0)
+        if difficulty != 0:
+            print(f'CHECKING DIFFICULTY ({difficulty})')
+            remake = False
+            for tile in selected:
+                if difficulty == 1:
+                    print(tile[2])
+                    if 'angle' in tile[2]:
+                        break
+                    
+                elif difficulty == 2:
+                    if tile[2] in ('t', 'open'):
+                        break
 
-            remake = True
+                remake = True
 
-        if remake:
-            print('DIFFICULTY REQUIREMENTS NOT MET. REGENERATING MAZE.')
-            self.grid = self.generate_maze(difficulty)
+            if remake:
+                print('DIFFICULTY REQUIREMENTS NOT MET. REGENERATING MAZE.')
+                self.grid = self.generate_maze(difficulty)
 
         path = self.generate_path(selected)
         for i, loc in enumerate(self.tile_locations):
@@ -599,7 +601,7 @@ class MazeGeneration:
 
 def main():
     mg = MazeGeneration()
-    print(mg.generate_maze('medium'))
+    print(mg.generate_maze('easy'))
 
 if __name__ == "__main__":
     main()
