@@ -1,6 +1,9 @@
+from lib2to3.pytree import generate_matches
 import numpy as np
 import random
 import time
+
+from pyrfc3339 import generate
 
 class MazeGeneration:
 
@@ -118,14 +121,14 @@ class MazeGeneration:
         }
 
         self.connection_map = {
-            'tl':'tr',
-            't':'b',
-            'tr':'tl',
-            'r':'l',
-            'br':'bl',
-            'b':'t',
-            'bl':'br',
-            'l':'r'
+            'tl':dict(top='bl', side='tr'),
+            't':dict(top='b', side='N/A'),
+            'tr':dict(top='br', side='tl'),
+            'r':dict(top='N/A', side='l'),
+            'br':dict(top='tr', side='bl'),
+            'b':dict(top='t', side='N/A'),
+            'bl':dict(top='tl', side='br'),
+            'l':dict(top='N/A', side='r')
         }
 
     def rotate(self, openings, num_rotations):
@@ -174,46 +177,57 @@ class MazeGeneration:
 
     def check_validity(self, pos, tile_list, possible_connections):
         constraints = []
-        connections = []
+        connections = dict(side=[], top=[])
 
         # print('Pos', pos)
         # print('Tile list', tile_list)
         if pos < 3:
-            constraints.extend(['t'])
+            # constraints.extend(['t', 'tr', 'tl'])
             if pos > 0:
                 if not any('r' in o for o in tile_list[-1][1]):
                     constraints.extend(['l', 'bl', 'tl'])
-                connections = [o for o in tile_list[-1][1] if 'r' in o]
+                connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
+                connections['top'] = []
+                print('CONNECTIONS:', connections)
         elif pos > 5:
-            if (pos - 3) not in possible_connections:
-                return constraints, connections
+            # if (pos - 3) not in possible_connections:
+            #     return constraints, connections
             # constraints.append('b')
             if not any('b' in o for o in tile_list[-3][1]):
                 constraints.extend(['t', 'tr', 'tl'])
-            connections += [o for o in tile_list[-3][1] if 'b' in o]
+            connections['top'] = [o for o in tile_list[-3][1] if 'b' in o]
             if pos != 6:
                 if not any('r' in o for o in tile_list[-1][1]):
                     constraints.extend(['l', 'bl', 'tl'])
-                connections += [o for o in tile_list[-1][1] if 'r' in o]
+                connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
+            else:
+                connections['side'] = []
+            print('CONNECTIONS:', connections)
         else:
             if not any('b' in o for o in tile_list[-3][1]):
                 constraints.extend(['t', 'tr', 'tl'])
-            connections += [o for o in tile_list[-3][1] if 'b' in o]
+            connections['top'] = [o for o in tile_list[-3][1] if 'b' in o]
             if pos != 3:
                 if not any('r' in o for o in tile_list[-1][1]):
                     constraints.extend(['l', 'bl', 'tl'])
-                connections += [o for o in tile_list[-1][1] if 'r' in o]
+                connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
+            else:
+                connections['side'] = []
+            print('CONNECTIONS:', connections)
         
         if pos % 3 == 0:
             constraints.extend(['l'])
         elif (pos-2) % 3 == 0:
             constraints.extend(['r'])
+            if ['br'] == connections['side']:
+                connections['side'] = []
+        print('FINAL CONNECTIONS:', connections)
         # print(connections)
         # print(constraints)
         return constraints, connections
 
     def generate_maze(self, difficulty):
-        random.seed(23)
+        # random.seed(23)
         if difficulty == 'hard':
             diff_list = ['hard', 'medium', 'easy']
         elif difficulty == 'medium':
@@ -230,61 +244,112 @@ class MazeGeneration:
 
         selected = []
         for i, loc in enumerate(self.tile_locations):
-            # print('Tile', i)
+            print('Tile', i)
             valid_connection = False
+            exhausted = False
+            tile_keys = list(tiles.keys())
             while not valid_connection:
-                tile_name = list(tiles.keys())[random.randint(0, len(tiles)-1)]
-                # print(tile_name)
+                if len(tile_keys) == 0:
+                    exhausted = True
+                    tile_name = 'filled'
+                else:
+                    tile_name = tile_keys.pop(random.randint(0, len(tile_keys)-1))
+                print(tile_name)
                 tile = tiles[tile_name]['tile']
                 openings = tiles[tile_name]['openings']
                 if len(selected) > 0:
-                    # print('SELECTED:', selected)
-                    constraints, connections = self.check_validity(i, selected, possible_connections)
-                    # print(constraints)
-                    # print(connections)
+                    print('SELECTED:', selected)
+                    constraints, connections = self.check_validity(i, selected, 
+                                                                    possible_connections)
+                    print('Constraints:', constraints)
+                    print('Connections:', connections)
                     time.sleep(1)
-                    if len(connections) == 0:
+                    if (len(connections['side']) + len(connections['top'])) == 0 or exhausted:
                         tile = tiles['filled']['tile']
-                        selected.append((tile, tiles['filled']['openings']))
-                        # print('Conenction 0 Append')
+                        selected.append((tile, tiles['filled']['openings'], 'filled'))
+                        print('Conenction 0 Append')
                         possible_connections.remove(i)
                         valid_connection = True
                     else:
                         if tile_name == 'filled':
-                            # print('Skipped filled.')
+                            print('Skipped filled.')
                             continue
                         orientations = self.get_orientations(openings)
                         orientations = list(zip(range(len(orientations)), orientations))
-                        # print(orientations)
+                        print('Possible orientations:', orientations)
                         while len(orientations) > 0:
                             orientation = orientations.pop(random.randint(0, len(orientations)-1))
-                            # print('Orientation', orientation)
-                            if not any(e in constraints for e in orientation[1]) \
-                                and any(self.connection_map[e] in connections for e in orientation[1]):
+                            print('Orientation', orientation)
+
+                            side_connections = [[self.connection_map[o]['side']] 
+                                                        for o in orientation[1]]
+
+                            top_connections = [[self.connection_map[o]['top']] 
+                                                        for o in orientation[1]]
+
+                            print('Side connections:', side_connections)
+                            print('Top connections:', top_connections)
+                            print(not any(o in constraints for o in orientation[1]))
+                            print(any(set(c).intersection(set(connections['side'])) for c in side_connections))
+                            print(any(set(c).intersection(set(connections['top'])) for c in top_connections))
+
+                            if not any(o in constraints for o in orientation[1]) and \
+                                    (any(set(c).intersection(set(connections['side'])) for c in side_connections) or \
+                                     any(set(c).intersection(set(connections['top'])) for c in top_connections)):
                                     
                                 tile = np.rot90(tile, orientation[0], (1, 0))
                                 openings = self.rotate(openings, orientation[0])
 
                                 if self.check_path(i, possible_connections):
                                     path.append(i)
-                                else:
-                                    tile = np.vectorize(lambda x: 0 if x == 2 else x)(tile)
-                                selected.append((tile, openings))
-                                # print('Normal append.')
+                                # else:
+                                #     tile = np.vectorize(lambda x: 0 if x == 2 else x)(tile)
+                                selected.append((tile, openings, tile_name))
+                                print('Normal append.')
                                 valid_connection = True
                                 break
                             
                 else:
                     if tile_name == 'filled':
                         continue
-                    selected.append((tile, openings))
-                    # print('First append.')
+                    selected.append((tile, openings, tile_name))
+                    print('First append.')
                     valid_connection = True
                     path.append(i)
-                y2 = loc[0] + tile.shape[0]
-                x2 = loc[1] + tile.shape[1]
-                self.grid[loc[0]:y2, loc[1]:x2] = tile
-        # print(path)
+                # y2 = loc[0] + tile.shape[0]
+                # x2 = loc[1] + tile.shape[1]
+                # self.grid[loc[0]:y2, loc[1]:x2] = tile
+                
+        print(f'CHECKING DIFFICULTY ({difficulty})')
+        remake = False
+        for tile in selected:
+            if difficulty == 'medium':
+                print(tile[2])
+                if 'angle' in tile[2]:
+                    break
+                
+            elif difficulty == 'hard':
+                if tile[2] in ('t', 'open'):
+                    break
+
+            remake = True
+
+        if remake:
+            print('DIFFICULTY REQUIREMENTS NOT MET. REGENERATING MAZE.')
+            self.grid = self.generate_maze(difficulty)
+
+        path = self.generate_path(selected)
+        for i, loc in enumerate(self.tile_locations):
+            y2 = loc[0] + 7
+            x2 = loc[1] + 7
+            if i in path:
+                tile = selected[i][0]
+            else:
+                tile = np.vectorize(lambda x: 0 if x == 2 else x)(selected[i][0])
+            
+            self.grid[loc[0]:y2, loc[1]:x2] = tile
+
+        # print(self.generate_path(selected))
         return self.grid
 
     def check_neighbors(self, y, x, maze):
@@ -409,7 +474,7 @@ class MazeGeneration:
             if next_dir == dir:
                 commands.append((0, 5/46, movement))
             else:
-                commands.append((self.get_angular(dir, next_dir)/4, 0, movement))
+                commands.append((self.get_angular(dir, next_dir)/6, 0, movement))
                 commands.append((0, 5/46, movement))
 
             loc = (loc[0]+movement[0], loc[1]+movement[1])
@@ -419,8 +484,65 @@ class MazeGeneration:
         return commands
 
     def generate_waypoint(self, current_position, movement):
-        waypoint = (current_position[0]+(movement[1]*(5/23)), current_position[1]+(movement[0]*(5/23)))
+        waypoint = (current_position[0]+(movement[1]*(5/23)), 
+                    current_position[1]+(movement[0]*(5/23)))
         return waypoint
+
+    def generate_path(self, selected_tiles):
+        ## TODO: Top row only looks for connections in same row.
+        ## Results in early termination even if continuation below
+        ## is possible. Need to keep iterating through tiles beyond
+        ## this condition.
+
+        links = {}
+        for i, tile in enumerate(selected_tiles):
+            print('TILE', i)
+            neighbors = [i-1, i+1, i-3, i+3]
+            neighbors = [n for n in neighbors if n >= 0 and n < 9]
+
+            connections = []
+            for j, neighbor in enumerate(neighbors):
+                print('NEIGHBOR', neighbor)
+                neighbor_tile = selected_tiles[neighbor]
+                print('TILE CONNECTIONS:', tile[1])
+                print('NEIGHBOR CONNECTIONS:', neighbor_tile[1])
+                for conn in neighbor_tile[1]:
+                    if j < 3:
+                        if self.connection_map[conn]['side'] in tile[1]:
+                            connections.append(neighbor)
+                            break
+                    else:
+                        if self.connection_map[conn]['top'] in tile[1]:
+                            connections.append(neighbor)
+                            break
+
+            links[i] = connections
+        path = []
+        path = self.find_link(path, selected_tiles, links, 0)
+
+        return path
+
+    def find_link(self, path, selected_tiles, links, link):
+        print('Link', link)
+        print('Path:', path)
+        print('Options:', links[link])
+        path.append(link)
+        links[link] = [l for l in links[link] if l not in path]
+        if len(links[link]) == 1:
+            link = links[link][0]
+            if link in path:
+                return path
+            self.find_link(path, selected_tiles, links, link)
+        elif len(links[link]) > 1:
+            link = links[link][random.randint(0, len(links[link])-1)]
+            if link in path:
+                return path
+            self.find_link(path, selected_tiles, links, link)
+        else:
+            return path
+        return path
+
+
 
     def check_path(self, i, possible_connections):
         if i < 3:
@@ -477,7 +599,7 @@ class MazeGeneration:
 
 def main():
     mg = MazeGeneration()
-    print(mg.generate_maze('hard'))
+    print(mg.generate_maze('medium'))
 
 if __name__ == "__main__":
     main()
