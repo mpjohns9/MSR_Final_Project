@@ -20,5 +20,6 @@
     <param name="viz" value="$(arg viz)"/>
   </node>
   <node pkg="tf2_ros" type="static_transform_publisher" name="bf_broadcaster" args="0 0 0 0 0 0 world odom" />
+  <node name="data_collection" pkg="maze_gen" type="data_collection" output="screen"/>
 
 </launch>
