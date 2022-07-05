@@ -9,7 +9,7 @@ class DataCollection:
     def __init__(self):
         self.data_pub = rospy.Publisher('sp_input', Int8, queue_size=100)
         self.sensor_val = None
-        self.r = rospy.Rate(1000)
+        self.r = rospy.Rate(100)
 
     def collect_data(self):
         try:
