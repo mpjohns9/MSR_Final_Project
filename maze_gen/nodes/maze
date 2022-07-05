@@ -3,6 +3,7 @@
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
+from generate.svm import SVM
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState
 from maze_gen.srv import GenerateMaze
@@ -37,6 +38,8 @@ class Maze:
         self.generate_maze = rospy.Service('generate_maze', GenerateMaze, self.create_markers)
         self.move = rospy.Service('move', Empty, self.move)
         self.save_data = rospy.Service('save_data', Empty, self.save_data)
+        self.save_data = rospy.Service('process_data', Empty, self.process_data)
+
 
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
@@ -46,6 +49,7 @@ class Maze:
         self.r = rospy.Rate(100)
         self.maze = []
         self.mg = MazeGeneration()
+        self.svm = SVM()
         # self.data = DataPipeline()
         self.path = []
         self.velocity = (0, 0) # (angular, linear)
@@ -74,6 +78,9 @@ class Maze:
 
     def save_data(self, req):
         print(self.data)
+
+    def process_data(self, req):
+        print(self.svm.process_data(self.data))
 
     def get_pose(self, p):
         pos = p.pose.pose.position
@@ -250,10 +257,18 @@ def main():
             else:
                 maze.data.append(0)
 
+        elif maze.move_state == MoveState.WAITING:
+            v.linear.x = 0
+            v.angular.z = 0
+            maze.vel_pub.publish(v)
+
         else:
             v.linear.x = 0
             v.angular.z = 0
             maze.vel_pub.publish(v)
+
+            if not maze.sensor_vals.empty():
+                maze.data.append(maze.sensor_vals.get_nowait())
 
         # maze.create_markers()
         # rospy.logerr(maze.markers)
