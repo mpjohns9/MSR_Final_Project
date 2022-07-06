@@ -39,10 +39,13 @@ class Maze:
         self.move = rospy.Service('move', Empty, self.move)
         self.save_data = rospy.Service('save_data', Empty, self.save_data)
         self.save_data = rospy.Service('process_data', Empty, self.process_data)
+        self.reset = rospy.Service('reset', Empty, self.reset)
 
 
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
+
+        self.initial_pos = None
 
         self.markers = []
         self.ma = MarkerArray()
@@ -72,17 +75,31 @@ class Maze:
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
 
+    def reset(self, req):
+        self.move_state = MoveState.WAITING
+        
+        ms = ModelState()
+        ms.model_name = 'robot'
+        ms.pose = self.initial_pos.pose.pose
+        self.set_model_state(ms)
+    
     def get_data(self, d):
         self.sensor_vals.put(d.data)
         # self.data_received = True
 
     def save_data(self, req):
-        print(self.data)
+        if self.sensor_vals.empty():
+            print(self.data)
+        else:
+            print(f'Data still being recorded. Please try again.')
 
     def process_data(self, req):
         print(self.svm.process_data(self.data))
 
     def get_pose(self, p):
+        if not self.initial_pos:
+            self.initial_pos = p
+
         pos = p.pose.pose.position
         orient = [
             p.pose.pose.orientation.x,
