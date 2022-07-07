@@ -5,7 +5,7 @@
   <group unless="$(eval arg('viz') == 'rviz')">
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
       <arg name="world_name" value="$(find maze_gen)/worlds/below_ground.world"/>
-      <arg name="paused" value="false"/>
+      <arg name="paused" value="true"/>
     </include>
     <param name="robot_description" command="$(find xacro)/xacro $(find maze_gen)/urdf/turtlebot3_burger.urdf.xacro" />
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
