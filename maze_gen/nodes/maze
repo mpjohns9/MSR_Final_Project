@@ -34,6 +34,8 @@ class Maze:
         self.spawn_model = rospy.ServiceProxy('gazebo/spawn_sdf_model', SpawnModel)
         self.delete_model = rospy.ServiceProxy('gazebo/delete_model', DeleteModel)
         self.set_model_state = rospy.ServiceProxy('gazebo/set_model_state', SetModelState)
+        self.pause_sim = rospy.ServiceProxy('gazebo/pause_physics', Empty)
+        self.unpause_sim = rospy.ServiceProxy('gazebo/unpause_physics', Empty)
 
         self.generate_maze = rospy.Service('generate_maze', GenerateMaze, self.create_markers)
         self.move = rospy.Service('move', Empty, self.move)
@@ -104,6 +106,9 @@ class Maze:
         ms.model_name = 'robot'
         ms.pose = self.initial_pos.pose.pose
         self.set_model_state(ms)
+    
+        self.pause_sim()
+        self.__init__()
     
     def get_data(self, d):
         if self.move_state == MoveState.MOVING:
@@ -178,6 +183,7 @@ class Maze:
                     self.move_state = MoveState.FINISHED
 
     def create_markers(self, req):
+        self.unpause_sim()
         # rospy.logerr('Generating maze...')
         self.maze = self.mg.generate_maze(int(req.difficulty))
         
@@ -273,6 +279,7 @@ class Maze:
                 #     if self.viz != 'rviz':
                 #         self.delete_model(f'wall{y*len(row) + x}')
 
+        self.pause_sim()
         return []
 
         # self.ma.markers = self.markers
@@ -299,10 +306,10 @@ def main():
             maze.vel_pub.publish(v)
 
             if v.linear.x != 0:
-                gt = v.linear.x
+                gt = 1
             else:
-                gt = v.linear.y
-                
+                gt = 0
+
             maze.ground_truth.append(gt)
 
             if not maze.sensor_vals.empty():
