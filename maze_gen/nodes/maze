@@ -77,7 +77,27 @@ class Maze:
 
     def reset(self, req):
         self.move_state = MoveState.WAITING
-        
+
+        id = 0
+        for y, row in enumerate(self.maze):
+            for x, c in enumerate(row):
+                if c in (1, 4, 5):
+                    p = Pose()
+
+                    p.orientation.w = 1.0
+                    p.position.x = x/(len(self.maze)/5) - 2.5
+                    p.position.y = y/(len(self.maze)/5) - 2.5
+                    p.position.z = -1000000
+
+                    if self.viz != 'rviz' and c == 1:
+                        ms = ModelState()
+                        ms.model_name = f'wall_{id}'
+                        ms.pose = p
+
+                        self.set_model_state(ms)
+                        
+                    id += 1
+
         ms = ModelState()
         ms.model_name = 'robot'
         ms.pose = self.initial_pos.pose.pose
