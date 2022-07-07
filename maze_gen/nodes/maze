@@ -66,6 +66,8 @@ class Maze:
 
         self.move_state = MoveState.WAITING
 
+        self.ground_truth = []
+
         if self.viz != 'rviz':
             with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
                 self.wall_xml = f1.read()
@@ -95,7 +97,7 @@ class Maze:
                         ms.pose = p
 
                         self.set_model_state(ms)
-                        
+
                     id += 1
 
         ms = ModelState()
@@ -104,7 +106,8 @@ class Maze:
         self.set_model_state(ms)
     
     def get_data(self, d):
-        self.sensor_vals.put(d.data)
+        if self.move_state == MoveState.MOVING:
+            self.sensor_vals.put(d.data)
         # self.data_received = True
 
     def save_data(self, req):
@@ -114,7 +117,13 @@ class Maze:
             print(f'Data still being recorded. Please try again.')
 
     def process_data(self, req):
+        print('DATA')
+        print(len(self.data))
         print(self.svm.process_data(self.data))
+        print()
+        print('GROUND TRUTH')
+        print(len(self.ground_truth))
+        print(self.svm.process_data(self.ground_truth))
 
     def get_pose(self, p):
         if not self.initial_pos:
@@ -288,6 +297,13 @@ def main():
             v.linear.x = maze.velocity[1]
             v.angular.z = maze.velocity[0]
             maze.vel_pub.publish(v)
+
+            if v.linear.x != 0:
+                gt = v.linear.x
+            else:
+                gt = v.linear.y
+                
+            maze.ground_truth.append(gt)
 
             if not maze.sensor_vals.empty():
                 maze.data.append(maze.sensor_vals.get_nowait())
