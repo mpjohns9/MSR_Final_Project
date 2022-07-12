@@ -3,7 +3,7 @@
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
-from generate.svm import SVM
+from generate.cnn import CNN
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState
 from maze_gen.srv import GenerateMaze
@@ -15,6 +15,7 @@ import numpy as np
 import tf
 import queue
 from enum import Enum
+import os
 # from generate.data_collection import DataPipeline
 
 class MoveState(Enum):
@@ -40,13 +41,15 @@ class Maze:
         self.generate_maze = rospy.Service('generate_maze', GenerateMaze, self.create_markers)
         self.move = rospy.Service('move', Empty, self.move)
         self.save_data = rospy.Service('save_data', Empty, self.save_data)
-        self.save_data = rospy.Service('process_data', Empty, self.process_data)
+        self.print_data = rospy.Service('print_data', Empty, self.print_data)
+        self.process_data = rospy.Service('process_data', Empty, self.process_data)
         self.reset = rospy.Service('reset', Empty, self.reset)
 
 
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
 
+        self.test_num = 1
         self.initial_pos = None
 
         self.markers = []
@@ -54,7 +57,7 @@ class Maze:
         self.r = rospy.Rate(100)
         self.maze = []
         self.mg = MazeGeneration()
-        self.svm = SVM()
+        self.cnn = CNN()
         # self.data = DataPipeline()
         self.path = []
         self.velocity = (0, 0) # (angular, linear)
@@ -62,6 +65,7 @@ class Maze:
         self.position = None
         self.orientation = None
 
+        self.trials = []
         self.data = []
         # self.data_received = False
         self.sensor_vals = queue.Queue()
@@ -81,6 +85,9 @@ class Maze:
 
     def reset(self, req):
         self.move_state = MoveState.WAITING
+        self.data = []
+        self.sensor_vals = queue.Queue()
+        self.ground_truth = []
 
         id = 0
         for y, row in enumerate(self.maze):
@@ -106,29 +113,28 @@ class Maze:
         ms.model_name = 'robot'
         ms.pose = self.initial_pos.pose.pose
         self.set_model_state(ms)
-    
+
+
         self.pause_sim()
-        self.__init__()
     
     def get_data(self, d):
         if self.move_state == MoveState.MOVING:
             self.sensor_vals.put(d.data)
         # self.data_received = True
 
-    def save_data(self, req):
+    def print_data(self, req):
         if self.sensor_vals.empty():
             print(self.data)
         else:
             print(f'Data still being recorded. Please try again.')
+    
+    def save_data(self, req):
+        dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        np.savetxt(f'{dir}/data/test_results_{self.test_num}.csv', np.asarray(self.trials), delimiter=',')
+        self.test_num += 1
 
     def process_data(self, req):
-        print('DATA')
-        print(len(self.data))
-        print(self.svm.process_data(self.data))
-        print()
-        print('GROUND TRUTH')
-        print(len(self.ground_truth))
-        print(self.svm.process_data(self.ground_truth))
+        self.trials = self.cnn.process_data(self.data)
 
     def get_pose(self, p):
         if not self.initial_pos:
@@ -171,9 +177,10 @@ class Maze:
                     self.set_next_command()
                 else:
                     self.move_state = MoveState.FINISHED
+                    self.trials.append(self.data)
         else:
-            rospy.logerr(f'Orientation: {self.orientation}')
-            rospy.logerr(f'Waypoint: {self.waypoint[2]}')
+            # rospy.logerr(f'Orientation: {self.orientation}')
+            # rospy.logerr(f'Waypoint: {self.waypoint[2]}')
             if np.abs(self.orientation-self.waypoint[2]) > 0.01:
                 return
             else:
@@ -181,6 +188,7 @@ class Maze:
                     self.set_next_command()
                 else:
                     self.move_state = MoveState.FINISHED
+                    self.trials.append(self.data)
 
     def create_markers(self, req):
         self.unpause_sim()
@@ -279,7 +287,6 @@ class Maze:
                 #     if self.viz != 'rviz':
                 #         self.delete_model(f'wall{y*len(row) + x}')
 
-        self.pause_sim()
         return []
 
         # self.ma.markers = self.markers
