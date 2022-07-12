@@ -9,17 +9,20 @@ class DataCollection:
     def __init__(self):
         self.data_pub = rospy.Publisher('sp_input', Int8, queue_size=100)
         self.sensor_val = None
-        self.r = rospy.Rate(100)
+        self.r = rospy.Rate(33)
+        self.test = []
+        self.i = 1
 
     def collect_data(self):
         try:
             events = get_gamepad()
         except:
-            rospy.logerr('*** No gamepad found. ***')
+            # rospy.logerr('*** No gamepad found. ***')
             return
         for event in events:
             if event.code == 'ABS_X':
                 self.sensor_val = event.state
+                self.test.append(self.sensor_val)
 
 def main():
     rospy.init_node('data_collection')
@@ -29,6 +32,9 @@ def main():
     while not rospy.is_shutdown():
         dc.collect_data()
         dc.data_pub.publish(dc.sensor_val)
+        print('Length:',len(dc.test))
+        print('Iter:', dc.i)
+        dc.i += 1
         dc.r.sleep()
 
 if __name__ == '__main__':

@@ -54,7 +54,7 @@ class Maze:
 
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(100)
+        self.r = rospy.Rate(33)
         self.maze = []
         self.mg = MazeGeneration()
         self.cnn = CNN()
