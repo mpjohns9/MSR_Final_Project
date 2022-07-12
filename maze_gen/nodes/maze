@@ -18,12 +18,14 @@ import tf
 import queue
 from enum import Enum
 import os
+from tensorflow.keras.models import load_model
 # from generate.data_collection import DataPipeline
 
 class MoveState(Enum):
     WAITING = 0
     MOVING = 1
     FINISHED = 2
+    MANUAL = 3
 
 class MoveActions(Enum):
     STOP = 0
@@ -53,10 +55,11 @@ class Maze:
         self.print_data = rospy.Service('print_data', Empty, self.print_data)
         self.process_data = rospy.Service('process_data', Empty, self.process_data)
         self.reset = rospy.Service('reset', Empty, self.reset)
-
+        self.toggle_control_mode = rospy.Service('toggle_control_mode', Empty, self.toggle_control_mode)
 
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
+        self.control_mode = rospy.get_param('~control')
 
         self.test_num = 1
         self.initial_pos = None
@@ -83,6 +86,17 @@ class Maze:
 
         self.ground_truth = []
 
+        self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        print(self.dir)
+        self.model = load_model(f'{self.dir}/data/cnn_test1.h5')
+
+        self.control_map = {
+            0: (0, 0),
+            1: (0, 5/46*2),
+            2: (np.pi/2, 0),
+            3: (-np.pi/2, 0),
+        }
+
         if self.viz != 'rviz':
             with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
                 self.wall_xml = f1.read()
@@ -91,6 +105,16 @@ class Maze:
                 self.sphere_xml = f2.read()
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
+
+    def toggle_control_mode(self, req):
+        print(self.control_mode)
+        print(self.control_mode == 'sim')
+        if self.control_mode == 'sim':
+            self.control_mode = 'manual'
+            self.move_state = MoveState.MANUAL
+        else:
+            self.control_mode == 'sim'
+        print(self.control_mode)
 
     def reset(self, req):
         self.move_state = MoveState.WAITING
@@ -127,7 +151,7 @@ class Maze:
         self.pause_sim()
     
     def get_data(self, d):
-        if self.move_state == MoveState.MOVING:
+        if self.move_state in (MoveState.MOVING, MoveState.MANUAL):
             self.sensor_vals.put(d.data)
         # self.data_received = True
 
@@ -138,8 +162,7 @@ class Maze:
             print(f'Data still being recorded. Please try again.')
     
     def save_data(self, req):
-        dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        self.trials.to_csv(f'{dir}/data/test_results_{self.test_num}.csv')
+        self.trials.to_csv(f'{self.dir}/data/test_results_{self.test_num}.csv')
         self.test_num += 1
 
     def process_data(self, req):
@@ -323,45 +346,64 @@ def main():
     v = Twist()
     while not rospy.is_shutdown():
         # maze.data.print_data()
+        # print(maze.control_mode)
+        if maze.control_mode == 'sim':
+            # if maze.moving:
+            if maze.move_state == MoveState.MOVING:
+                maze.generate_vel()
+                v.linear.x = maze.velocity[1]
+                v.angular.z = maze.velocity[0]
+                maze.vel_pub.publish(v)
 
-        # if maze.moving:
-        if maze.move_state == MoveState.MOVING:
-            maze.generate_vel()
-            v.linear.x = maze.velocity[1]
-            v.angular.z = maze.velocity[0]
-            maze.vel_pub.publish(v)
+                if v.linear.x != 0:
+                    gt = MoveActions.FORWARD.value
+                elif v.angular.z > 0:
+                    gt = MoveActions.LEFT_TURN.value
+                elif v.angular.z < 0: 
+                    gt = MoveActions.RIGHT_TURN.value
 
-            if v.linear.x != 0:
-                gt = MoveActions.FORWARD.value
-            elif v.angular.z > 0:
-                gt = MoveActions.LEFT_TURN.value
-            elif v.angular.z < 0: 
-                gt = MoveActions.RIGHT_TURN.value
+                maze.ground_truth.append(gt)
+                # print(maze.ground_truth)
 
-            maze.ground_truth.append(gt)
-            # print(maze.ground_truth)
+                if not maze.sensor_vals.empty():
+                    maze.data.append(maze.sensor_vals.get_nowait())
+                else:
+                    maze.data.append(0)
 
+            elif maze.move_state == MoveState.WAITING:
+                v.linear.x = 0
+                v.angular.z = 0
+                maze.vel_pub.publish(v)
+
+            else:
+                v.linear.x = 0
+                v.angular.z = 0
+                maze.vel_pub.publish(v)
+
+                if not maze.sensor_vals.empty():
+                    maze.data.append(maze.sensor_vals.get_nowait())
+
+            # maze.create_markers()
+            # rospy.logerr(maze.markers)
+            # maze.marker_pub.publish(maze.ma)
+        else:
             if not maze.sensor_vals.empty():
                 maze.data.append(maze.sensor_vals.get_nowait())
             else:
                 maze.data.append(0)
+            
+            if len(maze.data) >= 50:
+                maze.data = maze.data[-50:]
+                print('Sensor data:', maze.data)
+                data = np.array(maze.data)
+                data = data.reshape(1, data.shape[0], 1)
+                pred = np.argmax(maze.model.predict(data), axis=1)
+                print('Prediction', pred)
 
-        elif maze.move_state == MoveState.WAITING:
-            v.linear.x = 0
-            v.angular.z = 0
-            maze.vel_pub.publish(v)
+                v.angular.z, v.linear.x = maze.control_map[pred[0]]
 
-        else:
-            v.linear.x = 0
-            v.angular.z = 0
-            maze.vel_pub.publish(v)
+                maze.vel_pub.publish(v)
 
-            if not maze.sensor_vals.empty():
-                maze.data.append(maze.sensor_vals.get_nowait())
-
-        # maze.create_markers()
-        # rospy.logerr(maze.markers)
-        # maze.marker_pub.publish(maze.ma)
         maze.r.sleep()
 
 if __name__ == '__main__':
