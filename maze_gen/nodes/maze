@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from tracemalloc import stop
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
@@ -12,6 +13,7 @@ from std_msgs.msg import Int8
 from std_srvs.srv import Empty, EmptyResponse
 from nav_msgs.msg import Odometry
 import numpy as np
+import pandas as pd
 import tf
 import queue
 from enum import Enum
@@ -23,6 +25,13 @@ class MoveState(Enum):
     MOVING = 1
     FINISHED = 2
 
+class MoveActions(Enum):
+    STOP = 0
+    FORWARD = 1
+    LEFT_TURN = 2
+    RIGHT_TURN = 3
+    # CONTINUE = 4
+    
 class Maze:
 
     def __init__(self):
@@ -130,11 +139,21 @@ class Maze:
     
     def save_data(self, req):
         dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        np.savetxt(f'{dir}/data/test_results_{self.test_num}.csv', np.asarray(self.trials), delimiter=',')
+        self.trials.to_csv(f'{dir}/data/test_results_{self.test_num}.csv')
         self.test_num += 1
 
     def process_data(self, req):
+        print(self.ground_truth)
+        self.ground_truth = self.ground_truth[:-33]
+        self.ground_truth.extend([MoveActions.STOP.value for i in range(33)])
+        print(self.ground_truth)
+        
+        
+        self.labels = self.cnn.process_data(self.ground_truth, labels=True)
         self.trials = self.cnn.process_data(self.data)
+
+        self.trials = pd.DataFrame(self.trials)
+        self.trials['labels'] = self.labels
 
     def get_pose(self, p):
         if not self.initial_pos:
@@ -313,11 +332,14 @@ def main():
             maze.vel_pub.publish(v)
 
             if v.linear.x != 0:
-                gt = 1
-            else:
-                gt = 0
+                gt = MoveActions.FORWARD.value
+            elif v.angular.z > 0:
+                gt = MoveActions.LEFT_TURN.value
+            elif v.angular.z < 0: 
+                gt = MoveActions.RIGHT_TURN.value
 
             maze.ground_truth.append(gt)
+            # print(maze.ground_truth)
 
             if not maze.sensor_vals.empty():
                 maze.data.append(maze.sensor_vals.get_nowait())
