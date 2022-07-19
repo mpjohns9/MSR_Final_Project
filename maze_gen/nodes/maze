@@ -61,12 +61,12 @@ class Maze:
         self.viz = rospy.get_param('~viz')
         self.control_mode = rospy.get_param('~control')
 
-        self.test_num = 1
+        self.test_num = 2
         self.initial_pos = None
 
         self.markers = []
         self.ma = MarkerArray()
-        self.r = rospy.Rate(33)
+        self.r = rospy.Rate(100)
         self.maze = []
         self.mg = MazeGeneration()
         self.cnn = CNN()
@@ -81,6 +81,7 @@ class Maze:
         self.data = []
         # self.data_received = False
         self.sensor_vals = queue.Queue()
+        self.live_queue = queue.LifoQueue()
 
         self.move_state = MoveState.WAITING
 
@@ -88,13 +89,13 @@ class Maze:
 
         self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         print(self.dir)
-        self.model = load_model(f'{self.dir}/data/cnn_test1.h5')
+        self.model = load_model(f'{self.dir}/data/cnn_trial3_downsampled.h5')
 
         self.control_map = {
             0: (0, 0),
             1: (0, 5/46*2),
-            2: (np.pi/2, 0),
-            3: (-np.pi/2, 0),
+            2: (np.pi/12, 0),
+            3: (-np.pi/12, 0),
         }
 
         if self.viz != 'rviz':
@@ -105,6 +106,33 @@ class Maze:
                 self.sphere_xml = f2.read()
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
+
+    def generate_prompt(self, text):
+        marker = Marker()
+        marker.header.frame_id = 'world'
+        marker.id = 99999
+        marker.action = marker.ADD
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.scale.z = 0.1
+        marker.type = marker.TEXT_VIEW_FACING
+        marker.color.r = 0.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.color.a = 1.0
+
+        p = Pose()
+        p.orientation.w = 1.0
+        p.position.x = self.position[0]
+        p.position.y = self.position[1]
+        p.position.z = 1.25
+        marker.pose = p
+
+        marker.lifetime = rospy.Duration(2.5)
+
+        marker.text = text
+
+        self.marker_pub.publish(marker)
 
     def toggle_control_mode(self, req):
         print(self.control_mode)
@@ -148,11 +176,13 @@ class Maze:
         self.set_model_state(ms)
 
 
-        self.pause_sim()
+        # self.pause_sim()
     
     def get_data(self, d):
-        if self.move_state in (MoveState.MOVING, MoveState.MANUAL):
+        if self.move_state == MoveState.MOVING:
             self.sensor_vals.put(d.data)
+        elif self.move_state == MoveState.MANUAL:
+            self.live_queue.put(d.data)
         # self.data_received = True
 
     def print_data(self, req):
@@ -167,8 +197,8 @@ class Maze:
 
     def process_data(self, req):
         print(self.ground_truth)
-        self.ground_truth = self.ground_truth[:-33]
-        self.ground_truth.extend([MoveActions.STOP.value for i in range(33)])
+        self.ground_truth = self.ground_truth[:-100]
+        self.ground_truth.extend([MoveActions.STOP.value for i in range(100)])
         print(self.ground_truth)
         
         
@@ -344,6 +374,7 @@ def main():
     maze = Maze()
     # maze.create_markers()
     v = Twist()
+    prev_gt = None
     while not rospy.is_shutdown():
         # maze.data.print_data()
         # print(maze.control_mode)
@@ -361,6 +392,22 @@ def main():
                     gt = MoveActions.LEFT_TURN.value
                 elif v.angular.z < 0: 
                     gt = MoveActions.RIGHT_TURN.value
+
+                if prev_gt != gt and len(maze.path) > 1:
+                    if gt == MoveActions.FORWARD.value:
+                        text = 'Move Forward'
+                        maze.generate_prompt(text)
+                    elif gt == MoveActions.LEFT_TURN.value:
+                        text = 'Turn Left'
+                        maze.generate_prompt(text)
+                    elif gt == MoveActions.RIGHT_TURN.value:
+                        text = 'Turn Right'
+                        maze.generate_prompt(text)
+                elif len(maze.path) <= 1:
+                    text = 'Slow down and Stop'
+                    maze.generate_prompt(text)
+                
+                prev_gt = gt
 
                 maze.ground_truth.append(gt)
                 # print(maze.ground_truth)
@@ -387,15 +434,18 @@ def main():
             # rospy.logerr(maze.markers)
             # maze.marker_pub.publish(maze.ma)
         else:
-            if not maze.sensor_vals.empty():
-                maze.data.append(maze.sensor_vals.get_nowait())
+            # TODO: Reduce latency of sipnpuff signals.
+
+            if not maze.live_queue.empty():
+                maze.data.append(maze.live_queue.get_nowait())
             else:
                 maze.data.append(0)
             
-            if len(maze.data) >= 50:
-                maze.data = maze.data[-50:]
+            if len(maze.data) >= 150:
+                print(maze.data)
+                maze.data = maze.data[-150:]
                 print('Sensor data:', maze.data)
-                data = np.array(maze.data)
+                data = np.array(maze.data[::-1])
                 data = data.reshape(1, data.shape[0], 1)
                 pred = np.argmax(maze.model.predict(data), axis=1)
                 print('Prediction', pred)
