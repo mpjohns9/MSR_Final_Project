@@ -18,6 +18,7 @@ import tf
 import queue
 from enum import Enum
 import os
+import datetime as dt
 from tensorflow.keras.models import load_model
 # from generate.data_collection import DataPipeline
 
@@ -80,16 +81,19 @@ class Maze:
         self.trials = []
         self.data = []
         # self.data_received = False
-        self.sensor_vals = queue.Queue()
-        self.live_queue = queue.LifoQueue()
-
-        self.move_state = MoveState.WAITING
+        self.sensor_vals = queue.LifoQueue()
+        # self.live_queue = queue.LifoQueue()
 
         self.ground_truth = []
 
         self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         print(self.dir)
-        self.model = load_model(f'{self.dir}/data/cnn_trial3_downsampled.h5')
+
+        if self.control_mode != 'sim':
+            self.model = load_model(f'{self.dir}/data/cnn_072122_balanced_moredata_original.h5')
+            self.move_state = MoveState.MANUAL
+        else:
+            self.move_state = MoveState.WAITING
 
         self.control_map = {
             0: (0, 0),
@@ -140,6 +144,7 @@ class Maze:
         if self.control_mode == 'sim':
             self.control_mode = 'manual'
             self.move_state = MoveState.MANUAL
+            self.model = load_model(f'{self.dir}/data/cnn_072122_balanced_moredata_original.h5')
         else:
             self.control_mode == 'sim'
         print(self.control_mode)
@@ -179,10 +184,11 @@ class Maze:
         # self.pause_sim()
     
     def get_data(self, d):
-        if self.move_state == MoveState.MOVING:
-            self.sensor_vals.put(d.data)
-        elif self.move_state == MoveState.MANUAL:
-            self.live_queue.put(d.data)
+        self.sensor_vals.put(d.data)
+        # if self.move_state == MoveState.MOVING:
+        #     self.sensor_vals.put(d.data)
+        # elif self.move_state == MoveState.MANUAL:
+        #     self.live_queue.put(d.data)
         # self.data_received = True
 
     def print_data(self, req):
@@ -192,18 +198,30 @@ class Maze:
             print(f'Data still being recorded. Please try again.')
     
     def save_data(self, req):
-        self.trials.to_csv(f'{self.dir}/data/test_results_{self.test_num}.csv')
+        self.trials.to_csv(f'{self.dir}/data/test_results_{dt.datetime.now()}.csv')
         self.test_num += 1
 
     def process_data(self, req):
-        print(self.ground_truth)
-        self.ground_truth = self.ground_truth[:-100]
-        self.ground_truth.extend([MoveActions.STOP.value for i in range(100)])
-        print(self.ground_truth)
-        
+        print(len(self.ground_truth))
+        print(len(self.data))
+        if len(self.ground_truth) < len(self.data):
+            self.data = self.data[:len(self.ground_truth)]
+        elif len(self.data) < len(self.ground_truth):
+            self.ground_truth = self.ground_truth[:len(self.data)]
+
+        print(len(self.ground_truth))
+        print(len(self.data))
+
+        # print(self.ground_truth)
+        # self.ground_truth = self.ground_truth[:-100]
+        # self.ground_truth.extend([MoveActions.STOP.value for i in range(100)])
+        # print(len(self.ground_truth))
         
         self.labels = self.cnn.process_data(self.ground_truth, labels=True)
         self.trials = self.cnn.process_data(self.data)
+        print(len(self.labels))
+        print(len(self.trials))
+        
 
         self.trials = pd.DataFrame(self.trials)
         self.trials['labels'] = self.labels
@@ -375,12 +393,35 @@ def main():
     # maze.create_markers()
     v = Twist()
     prev_gt = None
+    collect = False
+    counter = 0
     while not rospy.is_shutdown():
         # maze.data.print_data()
         # print(maze.control_mode)
         if maze.control_mode == 'sim':
             # if maze.moving:
             if maze.move_state == MoveState.MOVING:
+                # Add stop label to beginning of sim
+                # if counter < 100:
+                #     v.linear.x = 0
+                #     v.angular.z = 0
+                #     maze.vel_pub.publish(v)
+
+                #     maze.ground_truth.append(0)
+
+                #     if not maze.sensor_vals.empty():
+                #         maze.data.append(maze.sensor_vals.get_nowait())
+                #     else:
+                #         maze.data.append(0)
+
+                #     counter += 1
+                #     maze.r.sleep()
+                #     continue
+
+                if counter >= 150:
+                    collect = False
+                    counter = 0
+
                 maze.generate_vel()
                 v.linear.x = maze.velocity[1]
                 v.angular.z = maze.velocity[0]
@@ -394,6 +435,7 @@ def main():
                     gt = MoveActions.RIGHT_TURN.value
 
                 if prev_gt != gt and len(maze.path) > 1:
+                    collect = True
                     if gt == MoveActions.FORWARD.value:
                         text = 'Move Forward'
                         maze.generate_prompt(text)
@@ -404,18 +446,25 @@ def main():
                         text = 'Turn Right'
                         maze.generate_prompt(text)
                 elif len(maze.path) <= 1:
+                    collect = True
                     text = 'Slow down and Stop'
                     maze.generate_prompt(text)
+                    gt = MoveActions.STOP.value
                 
                 prev_gt = gt
 
                 maze.ground_truth.append(gt)
                 # print(maze.ground_truth)
 
-                if not maze.sensor_vals.empty():
-                    maze.data.append(maze.sensor_vals.get_nowait())
-                else:
-                    maze.data.append(0)
+                if collect:
+                    if not maze.sensor_vals.empty():
+                        maze.data.append(maze.sensor_vals.get_nowait())
+                    else:
+                        maze.data.append(0)
+                    
+                    counter += 1
+
+            
 
             elif maze.move_state == MoveState.WAITING:
                 v.linear.x = 0
@@ -427,17 +476,18 @@ def main():
                 v.angular.z = 0
                 maze.vel_pub.publish(v)
 
-                if not maze.sensor_vals.empty():
+                if not maze.sensor_vals.empty() and collect and counter < 150:
                     maze.data.append(maze.sensor_vals.get_nowait())
-
+                    counter += 1
+                    
             # maze.create_markers()
             # rospy.logerr(maze.markers)
             # maze.marker_pub.publish(maze.ma)
         else:
             # TODO: Reduce latency of sipnpuff signals.
 
-            if not maze.live_queue.empty():
-                maze.data.append(maze.live_queue.get_nowait())
+            if not maze.sensor_vals.empty():
+                maze.data.append(maze.sensor_vals.get_nowait())
             else:
                 maze.data.append(0)
             
@@ -445,7 +495,7 @@ def main():
                 print(maze.data)
                 maze.data = maze.data[-150:]
                 print('Sensor data:', maze.data)
-                data = np.array(maze.data[::-1])
+                # data = np.array(maze.data[::-1])
                 data = data.reshape(1, data.shape[0], 1)
                 pred = np.argmax(maze.model.predict(data), axis=1)
                 print('Prediction', pred)
