@@ -81,7 +81,8 @@ class Maze:
         self.trials = []
         self.data = []
         # self.data_received = False
-        self.sensor_vals = queue.LifoQueue()
+        self.sensor_vals = queue.Queue(200)
+        self.test = []
         # self.live_queue = queue.LifoQueue()
 
         self.ground_truth = []
@@ -90,7 +91,7 @@ class Maze:
         print(self.dir)
 
         if self.control_mode != 'sim':
-            self.model = load_model(f'{self.dir}/data/cnn_072122_balanced_moredata_original.h5')
+            self.model = self.load_model()
             self.move_state = MoveState.MANUAL
         else:
             self.move_state = MoveState.WAITING
@@ -100,6 +101,7 @@ class Maze:
             1: (0, 5/46*2),
             2: (np.pi/12, 0),
             3: (-np.pi/12, 0),
+            4: None
         }
 
         if self.viz != 'rviz':
@@ -110,6 +112,9 @@ class Maze:
                 self.sphere_xml = f2.read()
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
+
+    def load_model(self):
+        return load_model(f'{self.dir}/data/cnn_synthetic_5class_moredata.h5')
 
     def generate_prompt(self, text):
         marker = Marker()
@@ -144,7 +149,7 @@ class Maze:
         if self.control_mode == 'sim':
             self.control_mode = 'manual'
             self.move_state = MoveState.MANUAL
-            self.model = load_model(f'{self.dir}/data/cnn_072122_balanced_moredata_original.h5')
+            self.model = self.load_model()
         else:
             self.control_mode == 'sim'
         print(self.control_mode)
@@ -184,7 +189,19 @@ class Maze:
         # self.pause_sim()
     
     def get_data(self, d):
-        self.sensor_vals.put(d.data)
+        # print(d.data)
+        # self.sensor_vals.put(d.data)
+        if len(self.test) >= 450:
+            if np.abs(d.data) < 5 and abs(np.mean(self.test[-20:])) < 5:
+                return
+
+            self.test.append(d.data)
+            self.test = self.test[-450:]
+            
+        else:
+            self.test.append(d.data)
+
+        # self.test.append(d.data)
         # if self.move_state == MoveState.MOVING:
         #     self.sensor_vals.put(d.data)
         # elif self.move_state == MoveState.MANUAL:
@@ -213,7 +230,7 @@ class Maze:
         print(len(self.data))
 
         # print(self.ground_truth)
-        # self.ground_truth = self.ground_truth[:-100]
+        # self.ground_truth = self.ground_truth[:-1000]
         # self.ground_truth.extend([MoveActions.STOP.value for i in range(100)])
         # print(len(self.ground_truth))
         
@@ -398,6 +415,7 @@ def main():
     while not rospy.is_shutdown():
         # maze.data.print_data()
         # print(maze.control_mode)
+        print(maze.test)
         if maze.control_mode == 'sim':
             # if maze.moving:
             if maze.move_state == MoveState.MOVING:
@@ -486,23 +504,34 @@ def main():
         else:
             # TODO: Reduce latency of sipnpuff signals.
 
-            if not maze.sensor_vals.empty():
-                maze.data.append(maze.sensor_vals.get_nowait())
-            else:
-                maze.data.append(0)
+            # if not maze.sensor_vals.empty():
+            #     maze.data.append(maze.sensor_vals.get_nowait())
+            # else:
+            #     maze.data.append(0)
             
-            if len(maze.data) >= 150:
-                print(maze.data)
-                maze.data = maze.data[-150:]
-                print('Sensor data:', maze.data)
+            if len(maze.test) >= 450:
+            #     print(maze.test)
+            #     maze.data = maze.data[-150:]
+            #     print('Sensor data:', maze.test)
+            #     # data = np.array(maze.data[::-1])
+            #     data = np.array(maze.data)
+            #     data = data.reshape(1, data.shape[0], 1)
+            #     pred = np.argmax(maze.model.predict(data), axis=1)
+            #     print('Prediction', pred)
+
+            #     if maze.control_map[pred[0]]:
+            #         v.angular.z, v.linear.x = maze.control_map[pred[0]]
+
+            #     maze.vel_pub.publish(v)
+            # print(maze.test)
+                data = np.array(maze.test[::3])
+                print('Sensor data:', data)
                 # data = np.array(maze.data[::-1])
+                # data = np.array(maze.test)
                 data = data.reshape(1, data.shape[0], 1)
                 pred = np.argmax(maze.model.predict(data), axis=1)
                 print('Prediction', pred)
-
-                v.angular.z, v.linear.x = maze.control_map[pred[0]]
-
-                maze.vel_pub.publish(v)
+            
 
         maze.r.sleep()
 
