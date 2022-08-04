@@ -6,7 +6,6 @@ import argparse
 from inputs import get_gamepad
 import time
 import plotext as plt
-import pygame as pg
 
 from tensorflow.keras.models import load_model
 
@@ -59,17 +58,13 @@ class Synthetic:
 
         return events, labels  
 
-    def augment_0(self, array):
-        rand = random.randint(-1, 1)
-        return [a + rand for a in array]
-
     def format_data(self, events, labels):
         df = pd.DataFrame(events)
         df['labels'] = labels
         return df   
 
     def load_model(self):
-        return load_model(f'{self.dir}/data/cnn_synthetic_5class_pygame.h5')
+        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_100000.h5')
 
 def main():
     parser = argparse.ArgumentParser()
@@ -82,7 +77,7 @@ def main():
         events, labels = syn.simulate(100000)
         data = syn.format_data(events, labels)
 
-        data.to_csv(f'{syn.dir}/data/synthetic/synthetic_trial_data_pygame.csv')
+        data.to_csv(f'{syn.dir}/data/synthetic/synthetic_trial_data_range.csv')
 
     elif args.mode == 'test_keyboard':
         model = syn.load_model()[0]
@@ -113,10 +108,6 @@ def main():
 
     elif args.mode == 'test_sp':
         model = syn.load_model()
-        pg.init()
-        pg.joystick.init()
-        joystick = pg.joystick.Joystick(0)
-        joystick.init()
         
         
         exit = None
@@ -130,36 +121,31 @@ def main():
         while exit != 'q':
             print()
             wait1 = input('Press a key to start data collection...\n')
-            time.sleep(0.1)
+            time.sleep(0.5)
             print()
             print('Collecting data...\n')
             print()
 
             counter = 0
             sensor_vals = []
-            while len(sensor_vals) < 150:
+            while len(sensor_vals) < 300:
                 # print(counter)
             # while True:
-                for event in pg.event.get():
-                    if event.type == pg.QUIT:
-                        return
-                sensor_vals.append(joystick.get_axis(0))
-                pg.time.wait(10)
-                # try:
-                #     events = get_gamepad()
-                # except:
-                #     print('*** No gamepad found. ***')
-                #     return
-                # for event in events:
-                #     if event.code == 'ABS_X' and counter%2 == 0:
-                #         sensor_vals.append(event.state)
-                #         # print(event.state)
+                try:
+                    events = get_gamepad()
+                except:
+                    print('*** No gamepad found. ***')
+                    return
+                for event in events:
+                    if event.code == 'ABS_X':
+                        sensor_vals.append(event.state)
+                        # print(event.state)
 
-                # counter += 1
+                counter += 1
                 # time.sleep(.005)
 
             # print(len(sensor_vals))
-            sensor_vals = np.array(sensor_vals)
+            sensor_vals = np.array(sensor_vals[::2])
             # max = np.max(sensor_vals)
             # min = np.min(sensor_vals)
             # rng = max - min
@@ -171,7 +157,7 @@ def main():
             
             # pred_metrics = model_metrics.predict(metrics)
             # pred_data = model_data.predict(data)
-            pred = model.predict(data)
+            pred = np.argmax(model.predict(data), axis=1)
 
             plt.clear_figure()
             plt.plot(sensor_vals)
