@@ -57,6 +57,7 @@ class Maze:
         self.process_data = rospy.Service('process_data', Empty, self.process_data)
         self.reset = rospy.Service('reset', Empty, self.reset)
         self.toggle_control_mode = rospy.Service('toggle_control_mode', Empty, self.toggle_control_mode)
+        self.toggle_control_mode = rospy.Service('collect_data', Empty, self.collect_data)
 
         # self.difficulty = rospy.get_param('~difficulty')
         self.viz = rospy.get_param('~viz')
@@ -81,11 +82,12 @@ class Maze:
         self.trials = []
         self.data = []
         # self.data_received = False
-        self.sensor_vals = queue.Queue(200)
-        self.test = []
+        self.sensor_vals = queue.Queue()
+        self.live_vals = []
         # self.live_queue = queue.LifoQueue()
 
         self.ground_truth = []
+        self.labels = []
 
         self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         print(self.dir)
@@ -190,16 +192,16 @@ class Maze:
     
     def get_data(self, d):
         # print(d.data)
-        # self.sensor_vals.put(d.data)
-        if len(self.test) >= 450:
-            if np.abs(d.data) < 5 and abs(np.mean(self.test[-20:])) < 5:
+        self.sensor_vals.put(d.data)
+        if len(self.live_vals) >= 450:
+            if np.abs(d.data) < 5 and abs(np.mean(self.live_vals[-20:])) < 5:
                 return
 
-            self.test.append(d.data)
-            self.test = self.test[-450:]
+            self.live_vals.append(d.data)
+            self.live_vals = self.live_vals[-450:]
             
         else:
-            self.test.append(d.data)
+            self.live_vals.append(d.data)
 
         # self.test.append(d.data)
         # if self.move_state == MoveState.MOVING:
@@ -208,6 +210,16 @@ class Maze:
         #     self.live_queue.put(d.data)
         # self.data_received = True
 
+    def collect_data(self, req):
+        filtered = self.live_vals[::3]
+        self.trials.append(filtered)
+        print('Data Collected:\n', filtered)
+        print()
+        label = input('Enter ground truth value...\n')
+        self.labels.append(label)
+        self.live_vals = []
+        print()
+
     def print_data(self, req):
         if self.sensor_vals.empty():
             print(self.data)
@@ -215,8 +227,17 @@ class Maze:
             print(f'Data still being recorded. Please try again.')
     
     def save_data(self, req):
-        self.trials.to_csv(f'{self.dir}/data/test_results_{dt.datetime.now()}.csv')
-        self.test_num += 1
+        self.trials = pd.DataFrame(self.trials)
+        self.trials['labels'] = self.labels
+        print('Data to be saved:\n')
+        print(self.trials)
+        save = input('Proceed with saving? (Press Y to save)\n')
+        if save == 'y':
+            self.trials.to_csv(f'{self.dir}/data/test_results_{dt.datetime.now()}.csv')
+            print('Data saved successfully.')
+            self.test_num += 1
+        else:
+            print('Data was not saved.')
 
     def process_data(self, req):
         print(len(self.ground_truth))
@@ -238,10 +259,6 @@ class Maze:
         self.trials = self.cnn.process_data(self.data)
         print(len(self.labels))
         print(len(self.trials))
-        
-
-        self.trials = pd.DataFrame(self.trials)
-        self.trials['labels'] = self.labels
 
     def get_pose(self, p):
         if not self.initial_pos:
@@ -415,7 +432,7 @@ def main():
     while not rospy.is_shutdown():
         # maze.data.print_data()
         # print(maze.control_mode)
-        print(maze.test)
+        # print(maze.live_vals)
         if maze.control_mode == 'sim':
             # if maze.moving:
             if maze.move_state == MoveState.MOVING:
@@ -509,7 +526,7 @@ def main():
             # else:
             #     maze.data.append(0)
             
-            if len(maze.test) >= 450:
+            if len(maze.live_vals) >= 450:
             #     print(maze.test)
             #     maze.data = maze.data[-150:]
             #     print('Sensor data:', maze.test)
@@ -524,13 +541,18 @@ def main():
 
             #     maze.vel_pub.publish(v)
             # print(maze.test)
-                data = np.array(maze.test[::3])
+                data = np.array(maze.live_vals[::3])
                 print('Sensor data:', data)
                 # data = np.array(maze.data[::-1])
                 # data = np.array(maze.test)
                 data = data.reshape(1, data.shape[0], 1)
                 pred = np.argmax(maze.model.predict(data), axis=1)
                 print('Prediction', pred)
+
+                if maze.control_map[pred[0]]:
+                    v.angular.z, v.linear.x = maze.control_map[pred[0]]
+
+                maze.vel_pub.publish(v)
             
 
         maze.r.sleep()
