@@ -228,7 +228,9 @@ class MazeGeneration:
         return constraints, connections
 
     def generate_maze(self, difficulty):
-        # random.seed(23)
+        # seed = random.randint(1,100)
+        # print(seed)
+        random.seed(71)
         if difficulty == 2:
             diff_list = ['hard', 'medium', 'easy']
         elif difficulty == 1:
@@ -373,6 +375,8 @@ class MazeGeneration:
             return 'NE', (-1, 1)
 
     def get_angular(self, dir, next_dir):
+        print('dir', dir)
+        print('next_dir', next_dir)
         if dir == 'S':
             if next_dir == 'E':
                 return -np.pi/2
@@ -474,10 +478,10 @@ class MazeGeneration:
             # print('Movement:', movement)
 
             if next_dir == dir:
-                commands.append((0, 5/46, movement))
+                commands.append((0, 5/46*2, movement))
             else:
                 commands.append((self.get_angular(dir, next_dir)/6, 0, movement))
-                commands.append((0, 5/46, movement))
+                commands.append((0, 5/46*2, movement))
 
             loc = (loc[0]+movement[0], loc[1]+movement[1])
             dir = next_dir
