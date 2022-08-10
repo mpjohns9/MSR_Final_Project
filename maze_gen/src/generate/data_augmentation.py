@@ -5,6 +5,14 @@ import os
 import datetime as dt
 
 def load_data(dir):
+    """Loads data to be augmented from csv file.
+
+    Args:
+        dir (): _description_
+
+    Returns:
+        _type_: _description_
+    """
     file = input('Enter file name of data to be augmented:\n')
     data = pd.read_csv(f'{dir}/data/{file}')
     labels = data['labels']
@@ -14,17 +22,20 @@ def load_data(dir):
 def compress(data):
     # print('COMPRESS')
     # print(data)
-    signal = data[::2]
+    factor = random.randint(2,4)
+    insert_idx = round(150/factor)
+    signal = data[::factor]
     noise = [x+random.randint(-1,1) for x in np.zeros(75)]
-    new_data = np.insert(noise, 75, signal)
+    new_data = np.insert(noise, insert_idx, signal)
     # print(len(new_data))
     return pd.Series(new_data)
 
 def expand(data):
     # print('EXPAND')
     # print(data)
+    factor = random.randint(15, 25)
     new_data = []
-    data = data[25:-25]
+    data = data[factor:-factor]
     for i, d in enumerate(data):
         if i%2 != 0:
             continue
