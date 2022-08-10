@@ -19,6 +19,27 @@ def load_data(dir):
     data = data.drop(['Unnamed: 0', 'labels'], axis=1)
     return data, labels
 
+def center(data):
+    noise = []
+    signal = []
+    check_noise = False
+    for i, d in enumerate(data):
+        if i < len(data)-3:
+            if (abs(d) > 5) or (abs(data[i+3]) > 5):
+                check_noise = False
+            else:
+                check_noise = True
+        
+        if check_noise:
+            noise.append(d)
+        else:
+            signal.append(d)
+    mid = round(len(noise)/2)
+    p1 = noise[:mid].copy()
+    p2 = noise[mid:].copy()
+    centered = [*p1, *signal, *p2]
+    return centered
+
 def compress(data):
     # print('COMPRESS')
     # print(data)
