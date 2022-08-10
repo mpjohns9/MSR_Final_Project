@@ -105,24 +105,28 @@ def main():
     dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     data, labels = load_data(dir)
-    new_df = pd.DataFrame(columns=data.columns)
+    new_df = data.copy()
     # print(data)
     for i in range(1000):
         print(f'Iteration {i}')
-        compressed = data.apply(compress, axis=1)
-        expanded = data.apply(expand, axis=1)
-        left_shift = data.apply(shift_lr, args=('l'), axis=1)
-        right_shift = data.apply(shift_lr, args=('r'), axis=1)
-        compressed.columns = data.columns
-        expanded.columns = data.columns
-        left_shift.columns = data.columns
-        right_shift.columns = data.columns
+        for i, row in data.iterrows():
+            row = center(row)
+            random_fn = random.randint(1, 4)
+            if random_fn == 1:
+                new_df = pd.concat([new_df, compress(row)])
+            if random_fn == 2:
+                new_df = pd.concat([new_df, expand(row)])
+            if random_fn == 3:
+                new_df = pd.concat([new_df, shift_lr(row, 'l')])
+            if random_fn == 4:
+                new_df = pd.concat([new_df, shift_lr(row, 'r')])
+        
         # print(compressed.columns)
         # print(expanded.columns)
         # print(left_shift.columns)
         # print(right_shift.columns)
         # print(data)
-        new_df = pd.concat([new_df, compressed, expanded, left_shift, right_shift])
+        # new_df = pd.concat([new_df, compressed, expanded, left_shift, right_shift])
         # print(data)
     
     new_df['labels'] = labels
