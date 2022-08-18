@@ -586,7 +586,7 @@ class MazeGeneration:
 
     def print_maze(self):
         """Print current maze in readable format."""
-        
+
         for i in range(self.grid.shape[0]):
             for cell in self.grid[i]:
                 if cell == 1:
@@ -596,6 +596,8 @@ class MazeGeneration:
             print('')
 
 def main():
+    """Prompts user for difficulty and prints generated maze."""
+    
     mg = MazeGeneration()
     difficulty = int(input('Enter maze difficulty: '))
     mg.generate_maze(difficulty)
