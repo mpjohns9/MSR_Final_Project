@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import random
+import math
 import os
 import datetime as dt
 
@@ -46,7 +47,8 @@ def compress(data):
     factor = random.randint(2,4)
     insert_idx = round(150/factor)
     signal = data[::factor]
-    noise = [x+random.randint(-1,1) for x in np.zeros(75)]
+    # print('Factor', factor)
+    noise = [x+random.randint(-1,1) for x in np.zeros(150-insert_idx)]
     new_data = np.insert(noise, insert_idx, signal)
     # print(len(new_data))
     return pd.Series(new_data)
@@ -54,9 +56,8 @@ def compress(data):
 def expand(data):
     # print('EXPAND')
     # print(data)
-    factor = random.randint(15, 25)
     new_data = []
-    data = data[factor:-factor]
+    data = data[25:-25]
     for i, d in enumerate(data):
         if i%2 != 0:
             continue
@@ -107,19 +108,46 @@ def main():
     data, labels = load_data(dir)
     new_df = data.copy()
     # print(data)
-    for i in range(1000):
+    iters = 1
+    for i in range(iters):
         print(f'Iteration {i}')
+        # print(data.shape)
+        # print(new_df.shape)
         for i, row in data.iterrows():
+            print(len(row))
+            print(row)
+            while len(row) < 150:
+                row.append(0)
+
+            print(len(row))
+            print(row)
             row = center(row)
             random_fn = random.randint(1, 4)
             if random_fn == 1:
-                new_df = pd.concat([new_df, compress(row)])
-            if random_fn == 2:
-                new_df = pd.concat([new_df, expand(row)])
-            if random_fn == 3:
-                new_df = pd.concat([new_df, shift_lr(row, 'l')])
-            if random_fn == 4:
-                new_df = pd.concat([new_df, shift_lr(row, 'r')])
+                # print('COMPRESS')
+                new_row = compress(row)
+                new_row.index = new_df.columns
+                new_row = new_row.to_frame().T
+                new_df = pd.concat([new_df, new_row])
+            elif random_fn == 2:
+                # print('EXPAND')
+                new_row = expand(row)
+                new_row.index = new_df.columns
+                new_row = new_row.to_frame().T
+                new_df = pd.concat([new_df, new_row])
+            elif random_fn == 3:
+                # print('SHIFT L')
+                new_row = shift_lr(row, 'l')
+                new_row.index = new_df.columns
+                new_row = new_row.to_frame().T
+                new_df = pd.concat([new_df, new_row])
+            elif random_fn == 4:
+                # print('SHIFT R')
+                new_row = shift_lr(row, 'r')
+                new_row.index = new_df.columns
+                new_row = new_row.to_frame().T
+                new_df = pd.concat([new_df, new_row])
+            # print(new_df)
         
         # print(compressed.columns)
         # print(expanded.columns)
@@ -129,7 +157,9 @@ def main():
         # new_df = pd.concat([new_df, compressed, expanded, left_shift, right_shift])
         # print(data)
     
-    new_df['labels'] = labels
+    new_df['labels'] = labels.tolist()*(iters+1)
+    # print(new_df['labels'].value_counts())
+    # return
     new_df.to_csv(f'{dir}/data/augmented_{dt.datetime.now()}.csv')
 
 if __name__ == '__main__':
