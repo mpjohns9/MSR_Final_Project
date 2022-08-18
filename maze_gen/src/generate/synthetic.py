@@ -10,8 +10,21 @@ import plotext as plt
 from tensorflow.keras.models import load_model
 
 class Synthetic:
+    """Generate and test synthetic dataset."""
 
     def __init__(self):
+        """Creates new synthetic object.
+
+        Args:
+            dir (str): Path to package root directory
+            x (ndarray): 1D array containing 150 values spaced evenly from 0 to 2pi
+            puff_sip (ndarray): Simulated puff then sip (sin(x))
+            sip_puff (ndarray): Simulated sip then puff (-sin(x))
+            double_puff (ndarray): Simulated double puff (absolute value of sin(x))
+            double_sip (ndarray): Simulated double sip (neg. absolute value of sin(x))
+            nothing (ndarray): Array of all zeros
+            inputs (dict): Mapping class to simulated signal (input)
+        """
 
         self.dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         
@@ -32,41 +45,71 @@ class Synthetic:
         }
 
     def random_input(self):
+        """Generates random input from inputs dict with random amplitude.
+
+        Returns:
+            ndarray: Random input with random amplitude
+            event (int): Class corresponding to random input
+        """
+
         amp = random.randint(75, 115)
         event = random.randint(0, len(self.inputs.keys())-1)
         return amp*self.inputs[event], event
 
     def simulate(self, num_events):
+        """Generates specified number of randomized synthetic data points.
+
+        Args:
+            num_events (int): Number of data points to be generated
+
+        Returns:
+            events (list): List of random inputs
+            labels (list): List of class labels corresponding to inputs
+        """
         events = []
         labels = []
         for i in range(num_events):
             event, label = self.random_input()
-
-            # # add noise to the nothing event
-            # if label == 4:
-            #     lower = random.randint(-5, 0)
-            #     upper = random.randint(0, 5)
-            #     event = np.array([e + random.randint(lower, upper) for e in event])
-
-            # max = np.max(event)
-            # min = np.min(event)
-            # rng = max - min
-
-            # event = np.concatenate((event, [max, min, rng]), axis=0)
             events.append(event)
             labels.append(label)
 
         return events, labels  
 
     def format_data(self, events, labels):
+        """Creates dataframe from events and labels.
+
+        Args:
+            events (list): List of random inputs
+            labels (list): List of class labels corresponding to inputs
+
+        Returns:
+            df (pd.DataFrame): Dataframe containing events and corresponding labels
+        """
+
         df = pd.DataFrame(events)
         df['labels'] = labels
         return df   
 
     def load_model(self):
+        """Loads trained model.
+
+        Change directory to load different model.
+
+        Returns:
+            Sequential: Model loaded from directory
+        """
+
         return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
 
 def main():
+    """Generates synthetic data or tests trained model based on mode.
+
+    generate: Generates synthetic dataset with 100000 data points
+    test_keyboard: Tests trained model using keyboard number inputs to generate 
+    inputs from inputs dictionary to make predictions
+    test_sp: Tests trained model using live sip and puff data to make predictions
+    """
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', nargs='?', const='generate', default='generate', help='Selects whether data is generated or tested.')
     args = parser.parse_args()
@@ -94,14 +137,8 @@ def main():
             
             a = random.randint(1,115)
             data = a*syn.inputs[num_pressed]
-            # max = np.max(data)
-            # min = np.min(data)
-            # rng = max - min
-            # metrics = np.array([max, min, rng])
 
-            # data = np.concatenate((data, [max, min, rng]), axis=0)
             data = data.reshape(1, data.shape[0], 1)
-            # metrics = metrics.reshape(1, metrics.shape[0], 1)
 
             pred = model.predict(data)
             print('Prediction', pred)
@@ -129,8 +166,6 @@ def main():
             counter = 0
             sensor_vals = []
             while len(sensor_vals) < 150:
-                # print(counter)
-            # while True:
                 try:
                     events = get_gamepad()
                 except:
@@ -139,24 +174,11 @@ def main():
                 for event in events:
                     if event.code == 'ABS_X':
                         sensor_vals.append(event.state)
-                        # print(event.state)
 
-                # counter += 1
-                # time.sleep(.005)
-
-            # print(len(sensor_vals))
             sensor_vals = np.array(sensor_vals)
-            # max = np.max(sensor_vals)
-            # min = np.min(sensor_vals)
-            # rng = max - min
-            # metrics = np.array([max, min, rng])
 
-            # # sensor_vals = np.concatenate((sensor_vals, [max, min, rng]), axis=0)
-            # metrics = metrics.reshape(1, metrics.shape[0], 1)
             data = sensor_vals.reshape(1, sensor_vals.shape[0], 1)
             
-            # pred_metrics = model_metrics.predict(metrics)
-            # pred_data = model_data.predict(data)
             pred = np.argmax(model.predict(data), axis=1)
 
             plt.clear_figure()
