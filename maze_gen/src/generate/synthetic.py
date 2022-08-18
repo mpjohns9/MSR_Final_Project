@@ -64,7 +64,7 @@ class Synthetic:
         return df   
 
     def load_model(self):
-        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_100000.h5')
+        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
 
 def main():
     parser = argparse.ArgumentParser()
@@ -128,7 +128,7 @@ def main():
 
             counter = 0
             sensor_vals = []
-            while len(sensor_vals) < 300:
+            while len(sensor_vals) < 150:
                 # print(counter)
             # while True:
                 try:
@@ -141,11 +141,11 @@ def main():
                         sensor_vals.append(event.state)
                         # print(event.state)
 
-                counter += 1
+                # counter += 1
                 # time.sleep(.005)
 
             # print(len(sensor_vals))
-            sensor_vals = np.array(sensor_vals[::2])
+            sensor_vals = np.array(sensor_vals)
             # max = np.max(sensor_vals)
             # min = np.min(sensor_vals)
             # rng = max - min
