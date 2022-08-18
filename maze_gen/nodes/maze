@@ -84,6 +84,7 @@ class Maze:
         # self.data_received = False
         self.sensor_vals = queue.Queue()
         self.live_vals = []
+        self.check_for_change = 0
         # self.live_queue = queue.LifoQueue()
 
         self.ground_truth = []
@@ -116,7 +117,7 @@ class Maze:
             rospy.wait_for_service("gazebo/spawn_sdf_model")
 
     def load_model(self):
-        return load_model(f'{self.dir}/data/cnn_synthetic_5class_moredata.h5')
+        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
 
     def generate_prompt(self, text):
         marker = Marker()
@@ -193,15 +194,24 @@ class Maze:
     def get_data(self, d):
         # print(d.data)
         self.sensor_vals.put(d.data)
+        previous = self.live_vals.copy()
         if len(self.live_vals) >= 450:
-            if np.abs(d.data) < 5 and abs(np.mean(self.live_vals[-20:])) < 5:
-                return
-
-            self.live_vals.append(d.data)
-            self.live_vals = self.live_vals[-450:]
+            if np.abs(d.data) > 5:
+                if self.check_for_change > 75:
+                    self.live_vals = [0.0 for i in range(450)]
+                    self.check_for_change = 0
+                
+                self.live_vals.append(d.data)
+                self.live_vals = self.live_vals[-450:] 
             
         else:
             self.live_vals.append(d.data)
+
+        if previous == self.live_vals:
+            self.check_for_change += 1
+
+
+        
 
         # self.test.append(d.data)
         # if self.move_state == MoveState.MOVING:
