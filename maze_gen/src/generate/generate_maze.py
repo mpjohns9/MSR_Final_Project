@@ -1,13 +1,25 @@
-from lib2to3.pytree import generate_matches
 import numpy as np
 import random
 import time
 
-from pyrfc3339 import generate
-
 class MazeGeneration:
+    """Generates maze from preset tiles and creates solution path.
+
+    Tiles are selected at random based on contraints that force
+    maze to be solvable. Difficulty can be adjusted to include tiles
+    with varying attributes.
+    """
 
     def __init__(self):
+        """Creates new maze generation object.
+
+        Args:
+            grid (ndarray): 2D array containing maze tiles, initialized to zeros
+            tiles (dict): Dictionary containing preset maze tiles and attributes (opening tags)
+            tile_locations (list):  List specifying starting location for each tile
+            rotation_map (dict): Mapping of tile openings before and after ninety-degree rotation
+            connection_map (dict): Mapping of opening tags to tags they are able to connect with (top and side)
+        """
 
         self.grid = np.zeros((23, 23))
         self.grid[0] = [1 for c in range(self.grid.shape[0])]
@@ -132,55 +144,63 @@ class MazeGeneration:
         }
 
     def rotate(self, openings, num_rotations):
+        """Generates new set of opening tags after n rotations.
+
+        Args:
+            openings (list of str): Original opening tags
+            num_rotations (int): Number of ninety-degree rotations to apply
+
+        Returns:
+            openings (list): New list of opening tags after specified number of rotations
+        """
+
         for i in range(num_rotations):
             openings = [self.rotation_map[o] for o in openings]
         return openings
 
     def get_orientations(self, openings):
+        """Generates list of openings possible in every orientation.
+
+        Args:
+            openings (list of str): Initial list of openings in default orientation
+
+        Returns:
+            tiles (list of list): Lists of openings at every possible tile orientation
+        """
+
         orientations = [openings]
         for i in range(3):
             orientations.append(self.rotate(openings, i+1))
         return orientations
 
     def generate_tile_pool(self, difficulty):
+        """Generates pool of tiles to draw from based on difficulty.
+
+        Args:
+            difficulty (int): Difficulty where 0 is easy, 1 is medium, and 2 is hard
+
+        Returns:
+            dict: Dictionary containing tiles corresponding to difficulty input
+        """
+
         return self.tiles[difficulty]
 
-    # def mark(x, y, grid, frontier):
-    #     grid[x, y] = 1
-    #     if (grid[x-1, y] == 0) and (x-1 > 0):
-    #         if (x-1, y) not in frontier:
-    #             frontier.append((x-1, y))
-    #     if (grid[x+1, y] == 0) and (x+1 < grid.shape[1]-1):
-    #         if (x+1, y) not in frontier:
-    #             frontier.append((x+1, y))
-    #     if (grid[x, y-1] == 0) and (y-1 > 0):
-    #         if (x, y-1) not in frontier:
-    #             frontier.append((x, y-1))
-    #     if (grid[x, y+1] == 0) and (y+1 < grid.shape[0]-1):
-    #         if (x, y+1) not in frontier:
-    #             frontier.append((x, y+1))
-    #     return grid, frontier
+    def check_validity(self, pos, tile_list, difficulty):
+        """Checks for constraints and connections at specified tile position.
 
-    # def neighbors(x, y, grid):
-    #     n = []
+        Args:
+            pos (int): Position in maze grid being checked
+            tile_list (list): List of tiles that have been selected so far at previous positions
+            difficulty (int): Difficulty where 0 is easy, 1 is medium, and 2 is hard
 
-    #     if (x > 0) and (grid[x-1, y] == 1):
-    #         n.append((x-1, y))
-    #     if (x < grid.shape[0]-1) and (grid[x+1, y] == 1):
-    #         n.append((x+1, y))
-    #     if (y > 0) and (grid[x, y-1] == 1):
-    #         n.append((x, y-1))
-    #     if (y < grid.shape[1]-1) and (grid[x, y+1] == 1):
-    #         n.append((x, y+1))
+        Returns:
+            constraints (list): List of tags that correspond to no opening in adjacent tiles
+            connections (dict): Dictionary containing possible connections with adjacent tiles
+        """
 
-    #     return n      
-
-    def check_validity(self, pos, tile_list, difficulty, possible_connections):
         constraints = []
         connections = dict(side=[], top=[])
 
-        # print('Pos', pos)
-        # print('Tile list', tile_list)
         if pos < 3:
             if difficulty == 0:
                 constraints.extend(['t', 'tr', 'tl'])
@@ -189,11 +209,7 @@ class MazeGeneration:
                     constraints.extend(['l', 'bl', 'tl'])
                 connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
                 connections['top'] = []
-                print('CONNECTIONS:', connections)
         elif pos > 5:
-            # if (pos - 3) not in possible_connections:
-            #     return constraints, connections
-            # constraints.append('b')
             if not any('b' in o for o in tile_list[-3][1]):
                 constraints.extend(['t', 'tr', 'tl'])
             connections['top'] = [o for o in tile_list[-3][1] if 'b' in o]
@@ -203,7 +219,6 @@ class MazeGeneration:
                 connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
             else:
                 connections['side'] = []
-            print('CONNECTIONS:', connections)
         else:
             if not any('b' in o for o in tile_list[-3][1]):
                 constraints.extend(['t', 'tr', 'tl'])
@@ -214,7 +229,6 @@ class MazeGeneration:
                 connections['side'] = [o for o in tile_list[-1][1] if 'r' in o]
             else:
                 connections['side'] = []
-            print('CONNECTIONS:', connections)
         
         if pos % 3 == 0:
             constraints.extend(['l'])
@@ -222,23 +236,31 @@ class MazeGeneration:
             constraints.extend(['r'])
             if ['br'] == connections['side']:
                 connections['side'] = []
-        print('FINAL CONNECTIONS:', connections)
-        # print(connections)
-        # print(constraints)
+
         return constraints, connections
 
     def generate_maze(self, difficulty):
-        # seed = random.randint(1,100)
-        # print(seed)
-        random.seed(71)
+        """Generates solvable maze of specified difficulty.
+
+        Args:
+            difficulty (int): Difficulty where 0 is easy, 1 is medium, and 2 is hard
+
+        Returns:
+            grid (ndarray): 2D array containing selected maze tiles
+        """
+
+        # Use 71 for testing (longer maze with all features on easy)
+        # random.seed(71)
         if difficulty == 2:
             diff_list = ['hard', 'medium', 'easy']
         elif difficulty == 1:
             diff_list = ['medium', 'easy']
+        elif difficulty == 0:
+            diff_list = ['easy']
         else:
+            print('Invalid difficulty. Generating easy maze...')
             diff_list = ['easy']
 
-        path = []
         possible_connections = list(range(9))
 
         tiles = {}
@@ -247,7 +269,6 @@ class MazeGeneration:
 
         selected = []
         for i, loc in enumerate(self.tile_locations):
-            print('Tile', i)
             valid_connection = False
             exhausted = False
             tile_keys = list(tiles.keys())
@@ -257,32 +278,24 @@ class MazeGeneration:
                     tile_name = 'filled'
                 else:
                     tile_name = tile_keys.pop(random.randint(0, len(tile_keys)-1))
-                print(tile_name)
                 tile = tiles[tile_name]['tile']
                 openings = tiles[tile_name]['openings']
                 if len(selected) > 0:
-                    print('SELECTED:', selected)
-                    constraints, connections = self.check_validity(i, selected, difficulty, 
-                                                                    possible_connections)
-                    print('Constraints:', constraints)
-                    print('Connections:', connections)
+                    constraints, connections = self.check_validity(i, selected, difficulty)
                     time.sleep(1)
                     if (len(connections['side']) + len(connections['top'])) == 0 or exhausted:
                         tile = tiles['filled']['tile']
                         selected.append((tile, tiles['filled']['openings'], 'filled'))
-                        print('Conenction 0 Append')
                         possible_connections.remove(i)
                         valid_connection = True
                     else:
-                        if tile_name == 'filled':
-                            print('Skipped filled.')
-                            continue
+                        # if tile_name == 'filled':
+                        #     print('Skipped filled.')
+                        #     continue
                         orientations = self.get_orientations(openings)
                         orientations = list(zip(range(len(orientations)), orientations))
-                        print('Possible orientations:', orientations)
                         while len(orientations) > 0:
                             orientation = orientations.pop(random.randint(0, len(orientations)-1))
-                            print('Orientation', orientation)
 
                             side_connections = [[self.connection_map[o]['side']] 
                                                         for o in orientation[1]]
@@ -290,25 +303,14 @@ class MazeGeneration:
                             top_connections = [[self.connection_map[o]['top']] 
                                                         for o in orientation[1]]
 
-                            print('Side connections:', side_connections)
-                            print('Top connections:', top_connections)
-                            print(not any(o in constraints for o in orientation[1]))
-                            print(any(set(c).intersection(set(connections['side'])) for c in side_connections))
-                            print(any(set(c).intersection(set(connections['top'])) for c in top_connections))
-
                             if not any(o in constraints for o in orientation[1]) and \
                                     (any(set(c).intersection(set(connections['side'])) for c in side_connections) or \
                                      any(set(c).intersection(set(connections['top'])) for c in top_connections)):
                                     
                                 tile = np.rot90(tile, orientation[0], (1, 0))
                                 openings = self.rotate(openings, orientation[0])
-
-                                if self.check_path(i, possible_connections):
-                                    path.append(i)
-                                # else:
-                                #     tile = np.vectorize(lambda x: 0 if x == 2 else x)(tile)
+                                
                                 selected.append((tile, openings, tile_name))
-                                print('Normal append.')
                                 valid_connection = True
                                 break
                             
@@ -316,19 +318,13 @@ class MazeGeneration:
                     if tile_name == 'filled':
                         continue
                     selected.append((tile, openings, tile_name))
-                    print('First append.')
                     valid_connection = True
-                    path.append(i)
-                # y2 = loc[0] + tile.shape[0]
-                # x2 = loc[1] + tile.shape[1]
-                # self.grid[loc[0]:y2, loc[1]:x2] = tile
-        print(difficulty == 0)
+
         if difficulty != 0:
             print(f'CHECKING DIFFICULTY ({difficulty})')
-            remake = False
             for tile in selected:
+                remake = False
                 if difficulty == 1:
-                    print(tile[2])
                     if 'angle' in tile[2]:
                         break
                     
@@ -353,10 +349,20 @@ class MazeGeneration:
             
             self.grid[loc[0]:y2, loc[1]:x2] = tile
 
-        # print(self.generate_path(selected))
         return self.grid
 
     def check_neighbors(self, y, x, maze):
+        """Checks neighbor cell to determine whether it is part of path.
+
+        Args:
+            y (int): y-position in maze
+            x (int): x-position in maze
+            maze (ndarray): 2D array containing selected maze tiles
+
+        Returns:
+            str: Direction of next cell in path
+            tuple: (y, x) movement needed to move to next cell in path
+        """
         if maze[y][x+1] in (2, 5):
             return 'E', (0, 1)
         elif maze[y+1][x+1] in (2, 5):
@@ -375,8 +381,16 @@ class MazeGeneration:
             return 'NE', (-1, 1)
 
     def get_angular(self, dir, next_dir):
-        print('dir', dir)
-        print('next_dir', next_dir)
+        """Returns appropriate angular velocity for turn type (sharp, gradual).
+
+        Args:
+            dir (str): Current direction of movement through maze
+            next_dir (str): Direction of movement to next cell along path
+
+        Returns:
+            float: The angular velocity appropriate for the turn
+        """
+
         if dir == 'S':
             if next_dir == 'E':
                 return -np.pi/2
@@ -458,24 +472,25 @@ class MazeGeneration:
                 return np.pi/4
 
     def solve_maze(self, maze, init_position):
-        # (angular, linear)
-        commands = []
-        loc = (4, 4)
-        dir = 'E'
-        waypoint = (init_position[0], init_position[1], 0)
+        """Generates linear and angular velocity commands to navigate through maze.
+
+        Args:
+            maze (ndarray): 2D array containing selected maze tiles
+            init_position (tuple): Starting position (cell) in maze
+
+        Returns:
+            commands (tuple): Set of velocity commands (angular, linear) to navigate maze successfully
+        """
+
+        commands = []   # (angular, linear)
+        loc = (4, 4)    # location initialized to starting cell
+        dir = 'E'       # direction initialized to starting direction
 
         while True:
-            # print(maze)
-            # print('Current Cell Value:', maze[loc[0]][loc[1]])
-            # print('Coordinates:', loc)
             if maze[loc[0]][loc[1]] == 5:
                 break
 
             next_dir, movement = self.check_neighbors(loc[0], loc[1], maze)
-            
-            # print('Direction:', dir)
-            # print('Next Dir:', next_dir)
-            # print('Movement:', movement)
 
             if next_dir == dir:
                 commands.append((0, 5/46*2, movement))
@@ -485,53 +500,71 @@ class MazeGeneration:
 
             loc = (loc[0]+movement[0], loc[1]+movement[1])
             dir = next_dir
-            # print(commands)
 
         return commands
 
     def generate_waypoint(self, current_position, movement):
+        """Generates a waypoint from current position and a desired movement.
+
+        Args:
+            current_position (tuple): Current position (cell) in maze
+            movement (tuple): (y, x) movement to get to desired cell
+
+        Returns:
+            waypoint (tuple): Desired (y, x) position based on prev. position and movement
+        """
         waypoint = (current_position[0]+(movement[1]*(5/23)), 
                     current_position[1]+(movement[0]*(5/23)))
         return waypoint
 
     def generate_path(self, selected_tiles):
-        ## TODO: Top row only looks for connections in same row.
-        ## Results in early termination even if continuation below
-        ## is possible. Need to keep iterating through tiles beyond
-        ## this condition.
+        """Generates single path through maze using list of selected tiles.
+
+        Args:
+            selected_tiles (list): List of chosen tiles that comprise maze
+
+        Returns:
+            path (list): Tiles to be included in path (numbered from top L (0) to bottom R (8))
+        """
 
         links = {}
         for i, tile in enumerate(selected_tiles):
-            print('TILE', i)
             neighbors = [i-1, i+1, i-3, i+3]
             neighbors = [n for n in neighbors if n >= 0 and n < 9]
 
             connections = []
-            for j, neighbor in enumerate(neighbors):
-                print('NEIGHBOR', neighbor)
+            for neighbor in neighbors:
                 neighbor_tile = selected_tiles[neighbor]
-                print('TILE CONNECTIONS:', tile[1])
-                print('NEIGHBOR CONNECTIONS:', neighbor_tile[1])
                 for conn in neighbor_tile[1]:
-                    if j < 3:
-                        if self.connection_map[conn]['side'] in tile[1]:
+                    if any(l in conn for l in ['l', 'r']) and self.connection_map[conn]['side'] in tile[1]:
+                        if neighbor not in connections:
                             connections.append(neighbor)
-                            break
-                    else:
-                        if self.connection_map[conn]['top'] in tile[1]:
+                    if 'b' in conn and self.connection_map[conn]['top'] in tile[1]:
+                        if neighbor not in connections:
                             connections.append(neighbor)
-                            break
-
             links[i] = connections
+
         path = []
         path = self.find_link(path, selected_tiles, links, 0)
 
         return path
 
     def find_link(self, path, selected_tiles, links, link):
-        print('Link', link)
-        print('Path:', path)
-        print('Options:', links[link])
+        """Generates path of connected tiles using list of selected tiles.
+
+        Links between tiles are chosen at random.
+        TODO: Select longest path through maze.
+
+        Args:
+            path (list): Tiles to be included in path (numbered from top L (0) to bottom R (8))
+            selected_tiles (list): List of chosen tiles that comprise maze 
+            links (dict): Mapping of tile ID/number to other connected tiles
+            link (int): ID of current tile to be checked for links
+
+        Returns:
+            path (list): Tiles to be included in path (numbered from top L (0) to bottom R (8))
+        """
+
         path.append(link)
         links[link] = [l for l in links[link] if l not in path]
         if len(links[link]) == 1:
@@ -545,67 +578,28 @@ class MazeGeneration:
                 return path
             self.find_link(path, selected_tiles, links, link)
         else:
-            return path
+            if link == 8:
+                return path
+            else:
+                self.find_link(path, selected_tiles, links, link+1)
         return path
 
-
-
-    def check_path(self, i, possible_connections):
-        if i < 3:
-            possible_connections.remove(i-1)
-            return possible_connections
-        elif i >= 3 and i < 6:
-            if i == 3:
-                if 0 in possible_connections:
-                    possible_connections.remove(0)
-                    return possible_connections
+    def print_maze(self):
+        """Print current maze in readable format."""
+        
+        for i in range(self.grid.shape[0]):
+            for cell in self.grid[i]:
+                if cell == 1:
+                    print('0 ', end='')
                 else:
-                    possible_connections.remove(i)
-                    return False
-            else:
-                if (i - 1) in possible_connections:
-                    possible_connections.remove(i-1)
-                    return possible_connections
-                elif (i - 3) in possible_connections:
-                    possible_connections.remove(i-3)
-                    return possible_connections
-                else:
-                    possible_connections.remove(i)
-                    return False
-        else:
-            if i == 6:
-                if 3 in possible_connections:
-                    possible_connections.remove(3)
-                    return possible_connections
-                else:
-                    possible_connections.remove(i)
-                    return False
-            else:
-                if (i - 1) in possible_connections:
-                    possible_connections.remove(i-1)
-                    return possible_connections
-                elif (i - 3) in possible_connections:
-                    possible_connections.remove(i-3)
-                    return possible_connections
-                else:
-                    possible_connections.remove(i)
-                    return False
-
-
-    def print_maze(grid):
-        for i in range(grid.shape[0]):
-            for each in grid[i]:
-                if each == 1:
-                    print('0', end='')
-                else:
-                    print('1', end='')
+                    print('1 ', end='')
             print('')
-
-    # print(generate_maze('easy'))
 
 def main():
     mg = MazeGeneration()
-    print(mg.generate_maze('easy'))
+    difficulty = int(input('Enter maze difficulty: '))
+    mg.generate_maze(difficulty)
+    mg.print_maze()
 
 if __name__ == "__main__":
     main()
