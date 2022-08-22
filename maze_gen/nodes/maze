@@ -82,9 +82,9 @@ class Maze:
         self.trials = []
         self.data = []
         # self.data_received = False
-        self.sensor_vals = queue.Queue()
+        # self.sensor_vals = queue.LifoQueue()
         self.live_vals = []
-        self.check_for_change = 0
+        self.last_change = dt.datetime.now()
         # self.live_queue = queue.LifoQueue()
 
         self.ground_truth = []
@@ -192,12 +192,10 @@ class Maze:
         # self.pause_sim()
     
     def get_data(self, d):
-        # print(d.data)
-        self.sensor_vals.put(d.data)
         previous = self.live_vals.copy()
         if len(self.live_vals) >= 450:
             if np.abs(d.data) > 5:
-                if self.check_for_change > 75:
+                if (dt.datetime.now()-self.last_change).seconds > 1:
                     self.live_vals = [0.0 for i in range(450)]
                     self.check_for_change = 0
                 
@@ -207,18 +205,8 @@ class Maze:
         else:
             self.live_vals.append(d.data)
 
-        if previous == self.live_vals:
-            self.check_for_change += 1
-
-
-        
-
-        # self.test.append(d.data)
-        # if self.move_state == MoveState.MOVING:
-        #     self.sensor_vals.put(d.data)
-        # elif self.move_state == MoveState.MANUAL:
-        #     self.live_queue.put(d.data)
-        # self.data_received = True
+        if previous != self.live_vals:
+            self.last_change = dt.datetime.now()
 
     def collect_data(self, req):
         filtered = self.live_vals[::3]
@@ -231,10 +219,8 @@ class Maze:
         print()
 
     def print_data(self, req):
-        if self.sensor_vals.empty():
-            print(self.data)
-        else:
-            print(f'Data still being recorded. Please try again.')
+        print('Trials: ', self.trials)
+        print('Labels: ', self.labels)
     
     def save_data(self, req):
         self.trials = pd.DataFrame(self.trials)
@@ -250,25 +236,10 @@ class Maze:
             print('Data was not saved.')
 
     def process_data(self, req):
-        print(len(self.ground_truth))
-        print(len(self.data))
-        if len(self.ground_truth) < len(self.data):
-            self.data = self.data[:len(self.ground_truth)]
-        elif len(self.data) < len(self.ground_truth):
-            self.ground_truth = self.ground_truth[:len(self.data)]
+        self.trials = [self.trim_data(t) for t in self.trials]
 
-        print(len(self.ground_truth))
-        print(len(self.data))
-
-        # print(self.ground_truth)
-        # self.ground_truth = self.ground_truth[:-1000]
-        # self.ground_truth.extend([MoveActions.STOP.value for i in range(100)])
-        # print(len(self.ground_truth))
-        
-        self.labels = self.cnn.process_data(self.ground_truth, labels=True)
-        self.trials = self.cnn.process_data(self.data)
-        print(len(self.labels))
-        print(len(self.trials))
+    def trim_data(self, data):
+        return np.array(data[::3])
 
     def get_pose(self, p):
         if not self.initial_pos:
@@ -311,7 +282,7 @@ class Maze:
                     self.set_next_command()
                 else:
                     self.move_state = MoveState.FINISHED
-                    self.trials.append(self.data)
+                    # self.trials.append(self.data)
         else:
             # rospy.logerr(f'Orientation: {self.orientation}')
             # rospy.logerr(f'Waypoint: {self.waypoint[2]}')
@@ -446,6 +417,10 @@ def main():
         if maze.control_mode == 'sim':
             # if maze.moving:
             if maze.move_state == MoveState.MOVING:
+                print('MOVING')
+                print(maze.live_vals)
+                print(maze.trials)
+                print(maze.labels)
                 # Add stop label to beginning of sim
                 # if counter < 100:
                 #     v.linear.x = 0
@@ -465,6 +440,10 @@ def main():
 
                 if counter >= 150:
                     collect = False
+                    maze.trials.append(maze.live_vals)
+                    maze.labels.append(round(np.mean(maze.ground_truth)))
+                    maze.ground_truth = []
+                    # maze.sensor_vals.queue.clear()
                     counter = 0
 
                 maze.generate_vel()
@@ -498,32 +477,43 @@ def main():
                 
                 prev_gt = gt
 
-                maze.ground_truth.append(gt)
                 # print(maze.ground_truth)
 
+                # TODO: append to data only after collecting 150 values. not every iteration.
+
                 if collect:
-                    if not maze.sensor_vals.empty():
-                        maze.data.append(maze.sensor_vals.get_nowait())
-                    else:
-                        maze.data.append(0)
-                    
+                    # if not maze.sensor_vals.empty():
+                    #     maze.data.append(maze.sensor_vals.get_nowait())
+                    # else:
+                    #     maze.data.append(0)
+                    maze.ground_truth.append(gt)
                     counter += 1
 
-            
-
             elif maze.move_state == MoveState.WAITING:
+                # print('WAITING')
                 v.linear.x = 0
                 v.angular.z = 0
                 maze.vel_pub.publish(v)
 
             else:
+                # print('FINISHED')
+                # print(maze.trials)
+                # print(maze.labels)
                 v.linear.x = 0
                 v.angular.z = 0
                 maze.vel_pub.publish(v)
 
-                if not maze.sensor_vals.empty() and collect and counter < 150:
-                    maze.data.append(maze.sensor_vals.get_nowait())
-                    counter += 1
+                # if collect:
+                #     print(maze.trials)
+                #     print(maze.labels)
+                #     if counter < 150:
+                #         # maze.data.append(maze.sensor_vals.get_nowait())
+                #         counter += 1
+                #     else:
+                #         maze.trials.append(maze.live_vals)
+                #         maze.labels.append(round(np.mean(maze.ground_truth)))
+                #         maze.ground_truth = []
+                #         collect = False
                     
             # maze.create_markers()
             # rospy.logerr(maze.markers)
@@ -551,7 +541,7 @@ def main():
 
             #     maze.vel_pub.publish(v)
             # print(maze.test)
-                data = np.array(maze.live_vals[::3])
+                data = maze.trim_data(maze.live_vals)
                 print('Sensor data:', data)
                 # data = np.array(maze.data[::-1])
                 # data = np.array(maze.test)
