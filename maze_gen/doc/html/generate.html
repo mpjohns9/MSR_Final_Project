@@ -1,0 +1,652 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>generate package &#8212; maze_gen 0.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/agogo.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="src" href="modules.html" /> 
+  </head><body>
+    <div class="header-wrapper" role="banner">
+      <div class="header">
+        <div class="headertitle"><a
+          href="index.html">maze_gen 0.0.0 documentation</a></div>
+        <div class="rel" role="navigation" aria-label="related navigation">
+          <a href="modules.html" title="src"
+             accesskey="P">previous</a> |
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a>
+        </div>
+       </div>
+    </div>
+
+    <div class="content-wrapper">
+      <div class="content">
+        <div class="document">
+            
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="generate-package">
+<h1>generate package<a class="headerlink" href="#generate-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-generate.cnn">
+<span id="generate-cnn-module"></span><h2>generate.cnn module<a class="headerlink" href="#module-generate.cnn" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="generate.cnn.CNN">
+<em class="property">class </em><code class="descclassname">generate.cnn.</code><code class="descname">CNN</code><span class="sig-paren">(</span><em>num_classes=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/cnn.html#CNN"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.cnn.CNN" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Neural network model used to classify 1D sip and puff signals.</p>
+<dl class="method">
+<dt id="generate.cnn.CNN.preprocess_data">
+<code class="descname">preprocess_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/cnn.html#CNN.preprocess_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.cnn.CNN.preprocess_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read data from csv to use in model training and testing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Dataframe containing sip and puff data from csv</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">data (pd.DataFrame)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.cnn.CNN.print_accuracy">
+<code class="descname">print_accuracy</code><span class="sig-paren">(</span><em>X_test</em>, <em>y_test</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/cnn.html#CNN.print_accuracy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.cnn.CNN.print_accuracy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="generate.cnn.CNN.process_train_test">
+<code class="descname">process_train_test</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/cnn.html#CNN.process_train_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.cnn.CNN.process_train_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split data into train/test sets and process.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<em>pd.DataFrame</em>) – Dataframe containing data to be split/processed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Processed data split randomly into train and test sets</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.cnn.main">
+<code class="descclassname">generate.cnn.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/cnn.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.cnn.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-generate.data_augmentation">
+<span id="generate-data-augmentation-module"></span><h2>generate.data_augmentation module<a class="headerlink" href="#module-generate.data_augmentation" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="generate.data_augmentation.center">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">center</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#center"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Separates noise and signal and centers signal in time.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of data to be centered (e.g., analog signal)</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">New list of same data with signal centered on noise</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">centered (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.data_augmentation.compress">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">compress</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#compress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.compress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compresses signal and adds noise in its place.</p>
+<p>Takes every 2-4 data points (random) and fills the rest out
+around it with noise to reamin at length of 150.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of data to be compressed</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Compressed data</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">new_data (pd.Series)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.data_augmentation.expand">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">expand</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#expand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.expand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expands signal by taking mean of consecutive data.</p>
+<p>Uses middle 100 data points and generates new data using
+mean of consecutive data to maintain length of 150.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of data to be expanded</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Expanded data</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">new_data (pd.Series)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.data_augmentation.load_data">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">load_data</code><span class="sig-paren">(</span><em>dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#load_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.load_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads data to be augmented from csv file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Path to package root directory</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dataframe containing data loaded from csv
+labels (pd.Series): Labels extracted from column of dataframe</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">data (pd.DataFrame)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.data_augmentation.main">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Applies random transformation to existing data.</p>
+<p>Possible transformations include: compression, expansion, shift earlier/later in time.
+Transformed data is saved to csv (augmented_{current_time}.csv).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.data_augmentation.shift_lr">
+<code class="descclassname">generate.data_augmentation.</code><code class="descname">shift_lr</code><span class="sig-paren">(</span><em>data</em>, <em>direction</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/data_augmentation.html#shift_lr"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.data_augmentation.shift_lr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shifts signal toward front or back of list (earlier/later in time).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of data to be shifted</li>
+<li><strong>direction</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – ‘l’ for left shift (front) and ‘r’ for right shift (back)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><p class="first"><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.10)"><code class="xref py py-exc docutils literal notranslate"><span class="pre">ValueError</span></code></a> – Raises error if ‘l’ or ‘r’ isn’t given as direction</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Data shifted left (forward) or right (backward) in list</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">new_data (pd.Series)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-generate.generate_maze">
+<span id="generate-generate-maze-module"></span><h2>generate.generate_maze module<a class="headerlink" href="#module-generate.generate_maze" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="generate.generate_maze.MazeGeneration">
+<em class="property">class </em><code class="descclassname">generate.generate_maze.</code><code class="descname">MazeGeneration</code><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Generates maze from preset tiles and creates solution path.</p>
+<p>Tiles are selected at random based on contraints that force
+maze to be solvable. Difficulty can be adjusted to include tiles
+with varying attributes.</p>
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.check_neighbors">
+<code class="descname">check_neighbors</code><span class="sig-paren">(</span><em>y</em>, <em>x</em>, <em>maze</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.check_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.check_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks neighbor cell to determine whether it is part of path.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>y</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – y-position in maze</li>
+<li><strong>x</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – x-position in maze</li>
+<li><strong>maze</strong> (<em>ndarray</em>) – 2D array containing selected maze tiles</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Direction of next cell in path
+tuple: (y, x) movement needed to move to next cell in path</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)">str</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.check_validity">
+<code class="descname">check_validity</code><span class="sig-paren">(</span><em>pos</em>, <em>tile_list</em>, <em>difficulty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.check_validity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.check_validity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks for constraints and connections at specified tile position.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>pos</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Position in maze grid being checked</li>
+<li><strong>tile_list</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of tiles that have been selected so far at previous positions</li>
+<li><strong>difficulty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Difficulty where 0 is easy, 1 is medium, and 2 is hard</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">List of tags that correspond to no opening in adjacent tiles
+connections (dict): Dictionary containing possible connections with adjacent tiles</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">constraints (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.find_link">
+<code class="descname">find_link</code><span class="sig-paren">(</span><em>path</em>, <em>selected_tiles</em>, <em>links</em>, <em>link</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.find_link"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.find_link" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates path of connected tiles using list of selected tiles.</p>
+<p>Links between tiles are chosen at random.
+TODO: Select longest path through maze.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – Tiles to be included in path (numbered from top L (0) to bottom R (8))</li>
+<li><strong>selected_tiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of chosen tiles that comprise maze</li>
+<li><strong>links</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)"><em>dict</em></a>) – Mapping of tile ID/number to other connected tiles</li>
+<li><strong>link</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – ID of current tile to be checked for links</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Tiles to be included in path (numbered from top L (0) to bottom R (8))</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">path (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.generate_maze">
+<code class="descname">generate_maze</code><span class="sig-paren">(</span><em>difficulty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.generate_maze"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.generate_maze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates solvable maze of specified difficulty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>difficulty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Difficulty where 0 is easy, 1 is medium, and 2 is hard</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">2D array containing selected maze tiles</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">grid (ndarray)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.generate_path">
+<code class="descname">generate_path</code><span class="sig-paren">(</span><em>selected_tiles</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.generate_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.generate_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates single path through maze using list of selected tiles.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>selected_tiles</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of chosen tiles that comprise maze</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Tiles to be included in path (numbered from top L (0) to bottom R (8))</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">path (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.generate_tile_pool">
+<code class="descname">generate_tile_pool</code><span class="sig-paren">(</span><em>difficulty</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.generate_tile_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.generate_tile_pool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates pool of tiles to draw from based on difficulty.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>difficulty</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Difficulty where 0 is easy, 1 is medium, and 2 is hard</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary containing tiles corresponding to difficulty input</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.10)">dict</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.generate_waypoint">
+<code class="descname">generate_waypoint</code><span class="sig-paren">(</span><em>current_position</em>, <em>movement</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.generate_waypoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.generate_waypoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates a waypoint from current position and a desired movement.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>current_position</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a>) – Current position (cell) in maze</li>
+<li><strong>movement</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a>) – (y, x) movement to get to desired cell</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Desired (y, x) position based on prev. position and movement</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">waypoint (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.get_angular">
+<code class="descname">get_angular</code><span class="sig-paren">(</span><em>dir</em>, <em>next_dir</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.get_angular"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.get_angular" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns appropriate angular velocity for turn type (sharp, gradual).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Current direction of movement through maze</li>
+<li><strong>next_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a>) – Direction of movement to next cell along path</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">The angular velocity appropriate for the turn</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.10)">float</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.get_orientations">
+<code class="descname">get_orientations</code><span class="sig-paren">(</span><em>openings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.get_orientations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.get_orientations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates list of openings possible in every orientation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>openings</strong> (<em>list of str</em>) – Initial list of openings in default orientation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Lists of openings at every possible tile orientation</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">tiles (list of list)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.print_maze">
+<code class="descname">print_maze</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.print_maze"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.print_maze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print current maze in readable format.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.rotate">
+<code class="descname">rotate</code><span class="sig-paren">(</span><em>openings</em>, <em>num_rotations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.rotate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.rotate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates new set of opening tags after n rotations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>openings</strong> (<em>list of str</em>) – Original opening tags</li>
+<li><strong>num_rotations</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of ninety-degree rotations to apply</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">New list of opening tags after specified number of rotations</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">openings (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.generate_maze.MazeGeneration.solve_maze">
+<code class="descname">solve_maze</code><span class="sig-paren">(</span><em>maze</em>, <em>init_position</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#MazeGeneration.solve_maze"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.MazeGeneration.solve_maze" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates linear and angular velocity commands to navigate through maze.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>maze</strong> (<em>ndarray</em>) – 2D array containing selected maze tiles</li>
+<li><strong>init_position</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a>) – Starting position (cell) in maze</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Set of velocity commands (angular, linear) to navigate maze successfully</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">commands (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a>)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.generate_maze.main">
+<code class="descclassname">generate.generate_maze.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/generate_maze.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.generate_maze.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prompts user for difficulty and prints generated maze.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-generate.synthetic">
+<span id="generate-synthetic-module"></span><h2>generate.synthetic module<a class="headerlink" href="#module-generate.synthetic" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="generate.synthetic.Synthetic">
+<em class="property">class </em><code class="descclassname">generate.synthetic.</code><code class="descname">Synthetic</code><a class="reference internal" href="_modules/generate/synthetic.html#Synthetic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.Synthetic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.10)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Generate and test synthetic dataset.</p>
+<dl class="method">
+<dt id="generate.synthetic.Synthetic.format_data">
+<code class="descname">format_data</code><span class="sig-paren">(</span><em>events</em>, <em>labels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/synthetic.html#Synthetic.format_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.Synthetic.format_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates dataframe from events and labels.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>events</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of random inputs</li>
+<li><strong>labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)"><em>list</em></a>) – List of class labels corresponding to inputs</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Dataframe containing events and corresponding labels</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">df (pd.DataFrame)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.synthetic.Synthetic.load_model">
+<code class="descname">load_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/synthetic.html#Synthetic.load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.Synthetic.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads trained model.</p>
+<p>Change directory to load different model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Model loaded from directory</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">Sequential</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.synthetic.Synthetic.random_input">
+<code class="descname">random_input</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/synthetic.html#Synthetic.random_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.Synthetic.random_input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates random input from inputs dict with random amplitude.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Random input with random amplitude
+event (int): Class corresponding to random input</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="generate.synthetic.Synthetic.simulate">
+<code class="descname">simulate</code><span class="sig-paren">(</span><em>num_events</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/synthetic.html#Synthetic.simulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.Synthetic.simulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates specified number of randomized synthetic data points.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>num_events</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of data points to be generated</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">List of random inputs
+labels (list): List of class labels corresponding to inputs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">events (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.10)">list</a>)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="generate.synthetic.main">
+<code class="descclassname">generate.synthetic.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/generate/synthetic.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#generate.synthetic.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates synthetic data or tests trained model based on mode.</p>
+<p>generate: Generates synthetic dataset with 100000 data points
+test_keyboard: Tests trained model using keyboard number inputs to generate
+inputs from inputs dictionary to make predictions
+test_sp: Tests trained model using live sip and puff data to make predictions</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-generate">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-generate" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+        </div>
+        <div class="sidebar">
+          <h3>Table of Contents</h3>
+          <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">generate package</a></li>
+</ul>
+</li>
+</ul>
+
+          <div role="search">
+            <h3 style="margin-top: 1.5em;">Search</h3>
+            <form class="search" action="search.html" method="get">
+                <input type="text" name="q" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+            </form>
+          </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+    <div class="footer-wrapper">
+      <div class="footer">
+        <div class="left">
+          <div role="navigation" aria-label="related navigaton">
+            <a href="modules.html" title="src"
+              >previous</a> |
+            <a href="py-modindex.html" title="Python Module Index"
+              >modules</a> |
+            <a href="genindex.html" title="General Index"
+              >index</a>
+          </div>
+          <div role="note" aria-label="source link">
+              <br/>
+              <a href="_sources/generate.rst.txt"
+                rel="nofollow">Show Source</a>
+          </div>
+        </div>
+
+        <div class="right">
+          
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2022.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+        </div>
+        <div class="clearer"></div>
+      </div>
+    </div>
+
+  </body>
+</html>

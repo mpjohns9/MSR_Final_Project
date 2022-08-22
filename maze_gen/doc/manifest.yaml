@@ -1,0 +1,24 @@
+actions: []
+authors: ''
+brief: ''
+bugtracker: ''
+depends:
+- geometry_msgs
+- rviz
+- joint_state_publisher
+- catkin
+- message_runtime
+- message_generation
+- gazebo_msgs
+- robot_state_publisher
+- xacro
+- gazebo_ros
+description: The maze_gen package
+license: TODO
+maintainers: mpjohns <mpjohns@todo.todo>
+msgs: []
+package_type: package
+repo_url: ''
+srvs:
+- GenerateMaze
+url: ''
