@@ -1,10 +1,31 @@
 #!/usr/bin/env python
 
-from tracemalloc import stop
+"""Generates maze simulation in Rviz/Gazebo for data collection.
+Also can be run without maze to reduce data collection time.
+Processes and saves data collected to csv for model training.
+
+PUBLISHERS: 
+    + maze_markers (Marker): Markers that make up maze walls
+    + cmd_vel (Twist): Velocity of turtlebot
+
+SUBSCRIBERS:
+    + odom (Odometry): Pose of turtlebot
+    + sp_input (Int8): Input received from sip and puff sensor
+
+SERVICES:
+    + generate_maze (GenerateMaze): Takes difficulty input and generates random maze
+    + move (Empty): Starts turtlebot in motion through maze
+    + save_data (Empty): Saves data collected to csv file
+    + print_data (Empty): Prints both current trials data and corresponding labels
+    + process_data (Empty): Converts collected data inputs from 450 long to 150
+    + reset (Empty): Resets maze, robot, and data in simulation
+    + toggle_control_mode (Empty): Toggles between simlulated and manual control modes
+    + collect_data (Empty): Begins facilitated data collection with prompt for ground truth
+"""
+
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from generate.generate_maze import MazeGeneration
-from generate.cnn import CNN
 from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import SpawnModel, DeleteModel, SetModelState
 from maze_gen.srv import GenerateMaze
@@ -20,7 +41,6 @@ from enum import Enum
 import os
 import datetime as dt
 from tensorflow.keras.models import load_model
-# from generate.data_collection import DataPipeline
 
 class MoveState(Enum):
     WAITING = 0
@@ -38,6 +58,48 @@ class MoveActions(Enum):
 class Maze:
 
     def __init__(self):
+
+        self.viz = rospy.get_param('~viz')
+        self.control_mode = rospy.get_param('~control')
+
+        self.test_num = 2
+        self.initial_pos = None
+
+        self.markers = []
+        self.ma = MarkerArray()
+        self.r = rospy.Rate(100)
+        self.maze = []
+        self.mg = MazeGeneration()
+        self.path = []
+        self.velocity = (0, 0) # (angular, linear)
+        self.waypoint = None
+        self.position = None
+        self.orientation = None
+
+        self.trials = []
+        self.data = []
+        self.live_vals = []
+        self.last_change = dt.datetime.now()
+
+        self.ground_truth = []
+        self.labels = []
+
+        self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        if self.control_mode != 'sim':
+            self.model = self.load_model()
+            self.move_state = MoveState.MANUAL
+        else:
+            self.move_state = MoveState.WAITING
+
+        self.control_map = {
+            0: (0, 0),
+            1: (0, 5/46*2),
+            2: (np.pi/12, 0),
+            3: (-np.pi/12, 0),
+            4: None
+        }
+
         self.marker_pub = rospy.Publisher('maze_markers', Marker, queue_size=100)
         self.vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=100)
 
@@ -57,55 +119,7 @@ class Maze:
         self.process_data = rospy.Service('process_data', Empty, self.process_data)
         self.reset = rospy.Service('reset', Empty, self.reset)
         self.toggle_control_mode = rospy.Service('toggle_control_mode', Empty, self.toggle_control_mode)
-        self.toggle_control_mode = rospy.Service('collect_data', Empty, self.collect_data)
-
-        # self.difficulty = rospy.get_param('~difficulty')
-        self.viz = rospy.get_param('~viz')
-        self.control_mode = rospy.get_param('~control')
-
-        self.test_num = 2
-        self.initial_pos = None
-
-        self.markers = []
-        self.ma = MarkerArray()
-        self.r = rospy.Rate(100)
-        self.maze = []
-        self.mg = MazeGeneration()
-        self.cnn = CNN()
-        # self.data = DataPipeline()
-        self.path = []
-        self.velocity = (0, 0) # (angular, linear)
-        self.waypoint = None
-        self.position = None
-        self.orientation = None
-
-        self.trials = []
-        self.data = []
-        # self.data_received = False
-        # self.sensor_vals = queue.LifoQueue()
-        self.live_vals = []
-        self.last_change = dt.datetime.now()
-        # self.live_queue = queue.LifoQueue()
-
-        self.ground_truth = []
-        self.labels = []
-
-        self.dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        print(self.dir)
-
-        if self.control_mode != 'sim':
-            self.model = self.load_model()
-            self.move_state = MoveState.MANUAL
-        else:
-            self.move_state = MoveState.WAITING
-
-        self.control_map = {
-            0: (0, 0),
-            1: (0, 5/46*2),
-            2: (np.pi/12, 0),
-            3: (-np.pi/12, 0),
-            4: None
-        }
+        self.collect_data = rospy.Service('collect_data', Empty, self.collect_data)
 
         if self.viz != 'rviz':
             with open('/home/mpjohns/cdir/FinalProject/ws/src/final_project/maze_gen/urdf/wall.sdf', 'r') as f1:
@@ -116,81 +130,20 @@ class Maze:
 
             rospy.wait_for_service("gazebo/spawn_sdf_model")
 
-    def load_model(self):
-        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
+    def get_pose(self, p):
+        if not self.initial_pos:
+            self.initial_pos = p
 
-    def generate_prompt(self, text):
-        marker = Marker()
-        marker.header.frame_id = 'world'
-        marker.id = 99999
-        marker.action = marker.ADD
-        marker.scale.x = 0.1
-        marker.scale.y = 0.1
-        marker.scale.z = 0.1
-        marker.type = marker.TEXT_VIEW_FACING
-        marker.color.r = 0.0
-        marker.color.g = 0.0
-        marker.color.b = 0.0
-        marker.color.a = 1.0
+        pos = p.pose.pose.position
+        orient = [
+            p.pose.pose.orientation.x,
+            p.pose.pose.orientation.y,
+            p.pose.pose.orientation.z,
+            p.pose.pose.orientation.w
+        ]
+        self.position = (pos.x, pos.y)
+        self.orientation = tf.transformations.euler_from_quaternion(orient)[2]
 
-        p = Pose()
-        p.orientation.w = 1.0
-        p.position.x = self.position[0]
-        p.position.y = self.position[1]
-        p.position.z = 1.25
-        marker.pose = p
-
-        marker.lifetime = rospy.Duration(2.5)
-
-        marker.text = text
-
-        self.marker_pub.publish(marker)
-
-    def toggle_control_mode(self, req):
-        print(self.control_mode)
-        print(self.control_mode == 'sim')
-        if self.control_mode == 'sim':
-            self.control_mode = 'manual'
-            self.move_state = MoveState.MANUAL
-            self.model = self.load_model()
-        else:
-            self.control_mode == 'sim'
-        print(self.control_mode)
-
-    def reset(self, req):
-        self.move_state = MoveState.WAITING
-        self.data = []
-        self.sensor_vals = queue.Queue()
-        self.ground_truth = []
-
-        id = 0
-        for y, row in enumerate(self.maze):
-            for x, c in enumerate(row):
-                if c in (1, 4, 5):
-                    p = Pose()
-
-                    p.orientation.w = 1.0
-                    p.position.x = x/(len(self.maze)/5) - 2.5
-                    p.position.y = y/(len(self.maze)/5) - 2.5
-                    p.position.z = -1000000
-
-                    if self.viz != 'rviz' and c == 1:
-                        ms = ModelState()
-                        ms.model_name = f'wall_{id}'
-                        ms.pose = p
-
-                        self.set_model_state(ms)
-
-                    id += 1
-
-        ms = ModelState()
-        ms.model_name = 'robot'
-        ms.pose = self.initial_pos.pose.pose
-        self.set_model_state(ms)
-
-
-        # self.pause_sim()
-    
     def get_data(self, d):
         previous = self.live_vals.copy()
         if len(self.live_vals) >= 450:
@@ -208,96 +161,8 @@ class Maze:
         if previous != self.live_vals:
             self.last_change = dt.datetime.now()
 
-    def collect_data(self, req):
-        filtered = self.live_vals[::3]
-        self.trials.append(filtered)
-        print('Data Collected:\n', filtered)
-        print()
-        label = input('Enter ground truth value...\n')
-        self.labels.append(label)
-        self.live_vals = []
-        print()
-
-    def print_data(self, req):
-        print('Trials: ', self.trials)
-        print('Labels: ', self.labels)
-    
-    def save_data(self, req):
-        self.trials = pd.DataFrame(self.trials)
-        self.trials['labels'] = self.labels
-        print('Data to be saved:\n')
-        print(self.trials)
-        save = input('Proceed with saving? (Press Y to save)\n')
-        if save == 'y':
-            self.trials.to_csv(f'{self.dir}/data/test_results_{dt.datetime.now()}.csv')
-            print('Data saved successfully.')
-            self.test_num += 1
-        else:
-            print('Data was not saved.')
-
-    def process_data(self, req):
-        self.trials = [self.trim_data(t) for t in self.trials]
-
-    def trim_data(self, data):
-        return np.array(data[::3])
-
-    def get_pose(self, p):
-        if not self.initial_pos:
-            self.initial_pos = p
-
-        pos = p.pose.pose.position
-        orient = [
-            p.pose.pose.orientation.x,
-            p.pose.pose.orientation.y,
-            p.pose.pose.orientation.z,
-            p.pose.pose.orientation.w
-        ]
-        self.position = (pos.x, pos.y)
-        self.orientation = tf.transformations.euler_from_quaternion(orient)[2]
-
-    def move(self, req):
-        if len(self.maze) > 0:
-            self.move_state = MoveState.MOVING
-            self.path = self.mg.solve_maze(self.maze, self.position)
-            self.set_next_command()
-        else:
-            rospy.logerr('No maze has been built. Generate maze first (/generate_maze) and try again.')
-
-    def set_next_command(self):
-        p = self.path.pop(0)
-        self.velocity = (p[0], p[1])
-
-        coords = self.mg.generate_waypoint(self.position, p[2])
-        self.waypoint = (*coords, self.orientation+(p[0]*6))
-
-    def generate_vel(self):
-        # print('Current Pos:', self.position)
-        # print('Waypoint:', self.waypoint)
-        if self.velocity[0] == 0:
-            if np.abs(self.waypoint[0]-self.position[0]) > 0.01 or \
-                    np.abs(self.waypoint[1]-self.position[1]) > 0.01:
-                return
-            else:
-                if len(self.path) > 0:
-                    self.set_next_command()
-                else:
-                    self.move_state = MoveState.FINISHED
-                    # self.trials.append(self.data)
-        else:
-            # rospy.logerr(f'Orientation: {self.orientation}')
-            # rospy.logerr(f'Waypoint: {self.waypoint[2]}')
-            if np.abs(self.orientation-self.waypoint[2]) > 0.01:
-                return
-            else:
-                if len(self.path) > 0:
-                    self.set_next_command()
-                else:
-                    self.move_state = MoveState.FINISHED
-                    self.trials.append(self.data)
-
     def create_markers(self, req):
         self.unpause_sim()
-        # rospy.logerr('Generating maze...')
         self.maze = self.mg.generate_maze(int(req.difficulty))
         
         self.maze[4][4] = 4
@@ -306,7 +171,6 @@ class Maze:
         row = -3
         while not end_found:
             if 2 in self.maze[row]:
-                # print('index')
                 idx = np.where(self.maze[row] == 2)[0]
                 print(idx)
                 if len(idx) > 1:
@@ -317,17 +181,11 @@ class Maze:
                 end_found = True
             row -= 1
 
-        # self.vel_callback(self.maze)
-
         id = 0
         print('Maze:',self.maze)
         for y, row in enumerate(self.maze):
-            # print('Row:',row)
             for x, c in enumerate(row):
-                # print('Cell:', c)
                 if c in (1, 4, 5):
-                    # if c == 4:
-                        # print('starting location', x, y)
 
                     marker = Marker()
                     marker.header.frame_id = 'world'
@@ -363,10 +221,8 @@ class Maze:
                     p.position.x = x/(len(self.maze)/5) - 2.5
                     p.position.y = y/(len(self.maze)/5) - 2.5
                     p.position.z = -0.125
-                    # print(p.position)
 
                     marker.pose = p
-                    # self.spawn_model(f'wall_{id}', self.wall_xml, '', p, 'world')
                     if self.viz != 'rviz':
                         if c == 1:
                             ms = ModelState()
@@ -374,76 +230,168 @@ class Maze:
                             ms.pose = p
 
                             self.set_model_state(ms)
-                    #     if c == 5:
-                    #         self.delete_model(f'wall{y*len(row) + x}')
-                    #         self.spawn_model(f'sphere_start', self.sphere_xml, '', p, 'world')
-                    #     elif c == 4:
-                    #         self.delete_model(f'wall{y*len(row) + x}')
 
                     self.markers.append(marker)
-                    # rospy.logerr('MARKER')
-                    # rospy.logerr(marker)
-                    # rospy.logerr('__________________________________')
                     self.marker_pub.publish(marker)
 
                     id += 1
 
-                # else:
-                #     if self.viz != 'rviz':
-                #         self.delete_model(f'wall{y*len(row) + x}')
-
         return []
 
-        # self.ma.markers = self.markers
+    def move(self, req):
+        if len(self.maze) > 0:
+            self.move_state = MoveState.MOVING
+            self.path = self.mg.solve_maze(self.maze, self.position)
+            self.set_next_command()
+        else:
+            rospy.logerr('No maze has been built. Generate maze first (/generate_maze) and try again.')
 
-        # id = 0
-        # for m in self.ma.markers:
-        #     m.id = id
-        #     id += 1
-            # rospy.logerr(m)
+        return EmptyResponse()
+
+    def toggle_control_mode(self, req):
+        if self.control_mode == 'sim':
+            self.control_mode = 'manual'
+            self.move_state = MoveState.MANUAL
+            self.model = self.load_model()
+        else:
+            self.control_mode == 'sim'
+
+    def reset(self, req):
+        self.move_state = MoveState.WAITING
+        self.data = []
+        self.sensor_vals = queue.Queue()
+        self.ground_truth = []
+
+        id = 0
+        for y, row in enumerate(self.maze):
+            for x, c in enumerate(row):
+                if c in (1, 4, 5):
+                    p = Pose()
+
+                    p.orientation.w = 1.0
+                    p.position.x = x/(len(self.maze)/5) - 2.5
+                    p.position.y = y/(len(self.maze)/5) - 2.5
+                    p.position.z = -1000000
+
+                    if self.viz != 'rviz' and c == 1:
+                        ms = ModelState()
+                        ms.model_name = f'wall_{id}'
+                        ms.pose = p
+
+                        self.set_model_state(ms)
+
+                    id += 1
+
+        ms = ModelState()
+        ms.model_name = 'robot'
+        ms.pose = self.initial_pos.pose.pose
+        self.set_model_state(ms)
+
+    def collect_data(self, req):
+        filtered = self.live_vals[::3]
+        self.trials.append(filtered)
+        print('Data Collected:\n', filtered)
+        print()
+        label = input('Enter ground truth value...\n')
+        self.labels.append(label)
+        self.live_vals = []
+        print()
+
+    def print_data(self, req):
+        print('Trials: ', self.trials)
+        print('Labels: ', self.labels)
+    
+    def save_data(self, req):
+        self.trials = pd.DataFrame(self.trials)
+        self.trials['labels'] = self.labels
+        print('Data to be saved:\n')
+        print(self.trials)
+        save = input('Proceed with saving? (Press Y to save)\n')
+        if save == 'y':
+            self.trials.to_csv(f'{self.dir}/data/test_results_{dt.datetime.now()}.csv')
+            print('Data saved successfully.')
+            self.test_num += 1
+        else:
+            print('Data was not saved.')
+
+    def process_data(self, req):
+        self.trials = [self.trim_data(t) for t in self.trials]
+
+    def load_model(self):
+        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
+
+    def trim_data(self, data):
+        return np.array(data[::3])
+
+    def generate_prompt(self, text):
+        marker = Marker()
+        marker.header.frame_id = 'world'
+        marker.id = 99999
+        marker.action = marker.ADD
+        marker.scale.x = 0.1
+        marker.scale.y = 0.1
+        marker.scale.z = 0.1
+        marker.type = marker.TEXT_VIEW_FACING
+        marker.color.r = 0.0
+        marker.color.g = 0.0
+        marker.color.b = 0.0
+        marker.color.a = 1.0
+
+        p = Pose()
+        p.orientation.w = 1.0
+        p.position.x = self.position[0]
+        p.position.y = self.position[1]
+        p.position.z = 1.25
+        marker.pose = p
+
+        marker.lifetime = rospy.Duration(2.5)
+
+        marker.text = text
+
+        self.marker_pub.publish(marker)
+
+    def set_next_command(self):
+        p = self.path.pop(0)
+        self.velocity = (p[0], p[1])
+
+        coords = self.mg.generate_waypoint(self.position, p[2])
+        self.waypoint = (*coords, self.orientation+(p[0]*6))
+
+    def generate_vel(self):
+        if self.velocity[0] == 0:
+            if np.abs(self.waypoint[0]-self.position[0]) > 0.01 or \
+                    np.abs(self.waypoint[1]-self.position[1]) > 0.01:
+                return
+            else:
+                if len(self.path) > 0:
+                    self.set_next_command()
+                else:
+                    self.move_state = MoveState.FINISHED
+        else:
+            if np.abs(self.orientation-self.waypoint[2]) > 0.01:
+                return
+            else:
+                if len(self.path) > 0:
+                    self.set_next_command()
+                else:
+                    self.move_state = MoveState.FINISHED
+                    self.trials.append(self.data)
 
 def main():
     rospy.init_node('maze')
     maze = Maze()
-    # maze.create_markers()
     v = Twist()
     prev_gt = None
     collect = False
     counter = 0
     while not rospy.is_shutdown():
-        # maze.data.print_data()
-        # print(maze.control_mode)
-        # print(maze.live_vals)
         if maze.control_mode == 'sim':
-            # if maze.moving:
             if maze.move_state == MoveState.MOVING:
-                print('MOVING')
-                print(maze.live_vals)
-                print(maze.trials)
-                print(maze.labels)
-                # Add stop label to beginning of sim
-                # if counter < 100:
-                #     v.linear.x = 0
-                #     v.angular.z = 0
-                #     maze.vel_pub.publish(v)
-
-                #     maze.ground_truth.append(0)
-
-                #     if not maze.sensor_vals.empty():
-                #         maze.data.append(maze.sensor_vals.get_nowait())
-                #     else:
-                #         maze.data.append(0)
-
-                #     counter += 1
-                #     maze.r.sleep()
-                #     continue
-
                 if counter >= 150:
                     collect = False
                     maze.trials.append(maze.live_vals)
                     maze.labels.append(round(np.mean(maze.ground_truth)))
                     maze.ground_truth = []
-                    # maze.sensor_vals.queue.clear()
                     counter = 0
 
                 maze.generate_vel()
@@ -477,74 +425,25 @@ def main():
                 
                 prev_gt = gt
 
-                # print(maze.ground_truth)
-
-                # TODO: append to data only after collecting 150 values. not every iteration.
-
                 if collect:
-                    # if not maze.sensor_vals.empty():
-                    #     maze.data.append(maze.sensor_vals.get_nowait())
-                    # else:
-                    #     maze.data.append(0)
                     maze.ground_truth.append(gt)
                     counter += 1
 
             elif maze.move_state == MoveState.WAITING:
-                # print('WAITING')
                 v.linear.x = 0
                 v.angular.z = 0
                 maze.vel_pub.publish(v)
 
             else:
-                # print('FINISHED')
-                # print(maze.trials)
-                # print(maze.labels)
                 v.linear.x = 0
                 v.angular.z = 0
                 maze.vel_pub.publish(v)
 
-                # if collect:
-                #     print(maze.trials)
-                #     print(maze.labels)
-                #     if counter < 150:
-                #         # maze.data.append(maze.sensor_vals.get_nowait())
-                #         counter += 1
-                #     else:
-                #         maze.trials.append(maze.live_vals)
-                #         maze.labels.append(round(np.mean(maze.ground_truth)))
-                #         maze.ground_truth = []
-                #         collect = False
-                    
-            # maze.create_markers()
-            # rospy.logerr(maze.markers)
-            # maze.marker_pub.publish(maze.ma)
         else:
-            # TODO: Reduce latency of sipnpuff signals.
-
-            # if not maze.sensor_vals.empty():
-            #     maze.data.append(maze.sensor_vals.get_nowait())
-            # else:
-            #     maze.data.append(0)
             
             if len(maze.live_vals) >= 450:
-            #     print(maze.test)
-            #     maze.data = maze.data[-150:]
-            #     print('Sensor data:', maze.test)
-            #     # data = np.array(maze.data[::-1])
-            #     data = np.array(maze.data)
-            #     data = data.reshape(1, data.shape[0], 1)
-            #     pred = np.argmax(maze.model.predict(data), axis=1)
-            #     print('Prediction', pred)
-
-            #     if maze.control_map[pred[0]]:
-            #         v.angular.z, v.linear.x = maze.control_map[pred[0]]
-
-            #     maze.vel_pub.publish(v)
-            # print(maze.test)
                 data = maze.trim_data(maze.live_vals)
                 print('Sensor data:', data)
-                # data = np.array(maze.data[::-1])
-                # data = np.array(maze.test)
                 data = data.reshape(1, data.shape[0], 1)
                 pred = np.argmax(maze.model.predict(data), axis=1)
                 print('Prediction', pred)
@@ -554,7 +453,6 @@ def main():
 
                 maze.vel_pub.publish(v)
             
-
         maze.r.sleep()
 
 if __name__ == '__main__':
