@@ -87,18 +87,6 @@ class CNN:
 
         return X_train, X_test, y_train, y_test, y_train_cat, y_test_cat
 
-        
-    def process_data(self, data, labels=False):
-        new_data = []
-        for i in range(len(data) - 149):
-            slice = data[i:i+150]
-            new_data.append(slice)
-
-        if labels:
-            new_data = [round(np.mean(x)) for x in new_data]
-
-        return new_data
-
     def print_accuracy(self, X_test, y_test):
         # Get the predictions and convert the multicolumn array into class predictions.
         y_pred = np.argmax(self.net.predict(X_test), axis=1)
