@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-from gc import collect
+
+"""Collects sip and puff input and publishes.
+
+PUBLISHER:
+    + sp_input (Int8): Input received from sip and puff sensor
+"""
+
 import rospy
 from inputs import get_gamepad
 from std_msgs.msg import Int8
@@ -10,21 +16,20 @@ class DataCollection:
         self.data_pub = rospy.Publisher('sp_input', Int8, queue_size=100)
         self.sensor_val = None
         self.r = rospy.Rate(1000)
-        # self.test = []
-        # self.i = 1
 
     def collect_data(self):
         try:
             events = get_gamepad()
         except:
-            # rospy.logerr('*** No gamepad found. ***')
+            rospy.logerr('*** No gamepad found. ***')
             return
         for event in events:
             if event.code == 'ABS_X':
                 self.sensor_val = event.state
-                # self.test.append(self.sensor_val)        
 
 def main():
+    """Collects data from sip and puff and publishes to sp_input."""
+    
     rospy.init_node('data_collection')
 
     dc = DataCollection()
@@ -32,9 +37,6 @@ def main():
     while not rospy.is_shutdown():
         dc.collect_data()
         dc.data_pub.publish(dc.sensor_val)
-        # print('Length:',len(dc.test))
-        # print('Iter:', dc.i)
-        # dc.i += 1
         # dc.r.sleep()
 
 if __name__ == '__main__':
