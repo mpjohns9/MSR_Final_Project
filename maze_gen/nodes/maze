@@ -318,12 +318,32 @@ class Maze:
         self.trials = [self.trim_data(t) for t in self.trials]
 
     def load_model(self):
+        """Loads trained model.
+
+        Change directory to load different model.
+
+        Returns:
+            Sequential: Model loaded from directory
+        """
         return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
 
     def trim_data(self, data):
+        """Trims data input to only include every third item.
+
+        Args:
+            data (list): List of data to be trimmed
+        Returns:
+            ndarray: List of data with only every third item remaining
+        """
         return np.array(data[::3])
 
     def generate_prompt(self, text):
+        """Publishes text marker.
+
+        Args:
+            text (str): Text to be displayed as marker
+        """
+
         marker = Marker()
         marker.header.frame_id = 'world'
         marker.id = 99999
@@ -351,6 +371,8 @@ class Maze:
         self.marker_pub.publish(marker)
 
     def set_next_command(self):
+        """Sets new velocity and waypoint."""
+
         p = self.path.pop(0)
         self.velocity = (p[0], p[1])
 
@@ -358,6 +380,13 @@ class Maze:
         self.waypoint = (*coords, self.orientation+(p[0]*6))
 
     def generate_vel(self):
+        """Checks if new command needs to be generated.
+
+        If waypoint has been reached, calls function to generate
+        new waypoint. Otherwise, if end of path has been reached 
+        changes state to finished; if not, does nothing.
+        """
+
         if self.velocity[0] == 0:
             if np.abs(self.waypoint[0]-self.position[0]) > 0.01 or \
                     np.abs(self.waypoint[1]-self.position[1]) > 0.01:
@@ -378,6 +407,19 @@ class Maze:
                     self.trials.append(self.data)
 
 def main():
+    """Does one of the following based on control mode:
+
+    If mode is 'sim':
+    Collects sip and puff input from user at certain points in time
+    (when robot changes move action) for specified duration. At the 
+    same time, publishes velocity commands to turtlebot to navigate 
+    through maze simulation.
+
+    If mode is 'manual':
+    Collects sip and puff input and classifies using loaded network model.
+    Publishes velocity commands to turtlebot based on predictions.
+    """
+    
     rospy.init_node('maze')
     maze = Maze()
     v = Twist()
