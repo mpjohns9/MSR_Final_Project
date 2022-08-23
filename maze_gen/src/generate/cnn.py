@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import datetime as dt
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
@@ -88,6 +89,13 @@ class CNN:
         return X_train, X_test, y_train, y_test, y_train_cat, y_test_cat
 
     def print_accuracy(self, X_test, y_test):
+        """Prints accuracy metrics.
+
+        Args:
+            X_test (ndarray): Test data points
+            y_test (ndarray): Test set labels
+        """
+
         # Get the predictions and convert the multicolumn array into class predictions.
         y_pred = np.argmax(self.net.predict(X_test), axis=1)
 
@@ -102,6 +110,8 @@ class CNN:
         print('Accuracy:', accuracy_score(y_pred, y_test))
 
 def main():
+    """Train model and print accuracy metrics."""
+
     cnn = CNN()
 
     data = cnn.preprocess_data()
@@ -113,6 +123,7 @@ def main():
     cnn_history = cnn.net.fit(X_train, y_train_cat, validation_split=0.1, epochs=10, callbacks=[early])
 
     cnn.print_accuracy(X_test, y_test)
+    cnn.net.save(f'model_{dt.datetime.now()}.h5')
 
 if __name__ == '__main__':
     main()
