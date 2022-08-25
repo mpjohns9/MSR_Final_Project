@@ -288,7 +288,7 @@ class Maze:
         self.set_model_state(ms)
 
     def collect_data(self, req):
-        filtered = self.live_vals[::3]
+        filtered = self.trim_data(self.live_vals)
         self.trials.append(filtered)
         print('Data Collected:\n', filtered)
         print()
@@ -419,7 +419,7 @@ def main():
     Collects sip and puff input and classifies using loaded network model.
     Publishes velocity commands to turtlebot based on predictions.
     """
-    
+
     rospy.init_node('maze')
     maze = Maze()
     v = Twist()
