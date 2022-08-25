@@ -14,6 +14,21 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 4. The augmented dataset is used to train a 1-dimensional convolutional neural network (CNN) to classify SNP inputs into discrete movement actions (forward, left, right, stop).
 5. Using the trained network, the user can navigate the Gazebo world freely, and eventually, real life.
 
-## 
+## Contents
+
+### Nodes
+- `maze`: Responsible for generating maze in simulated Rviz/Gazebo environment. Subscribes to sip and puff input and auto-labels user data during simulation run. Can also be run without maze to speed up data collection process. 
+- `data_collection`: Collects and publishes data from sip and puff sensor to be used by `maze` node.
+
+### Helper Files
+- `cnn.py`: Neural network used to classify sip and puff signals (1D CNN)
+- `data_augmentation.py`: Contains functions used to augment user data. Generates large dataset from small original sample to facilitate model training and reduce time required from user.
+- `generate_maze.py`: Generates maze of variable difficulty from preset tiles. Creates path through maze for robot to follow.
+- `synthetic.py`: Generate and test synthetic dataset. Primarily used to test/verify machine learning pipeline.
+
+## Usage Instructions
+### Simulation
+To run the maze simulation with a user providing input, follow the steps below:  
+1. 
 
 More coming soon...
