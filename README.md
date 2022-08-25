@@ -30,12 +30,41 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 ### Simulation
 Collect user sip and puff input while running maze simulation:  
 1. `roslaunch maze_gen maze.launch`  
-This will launch a turtlebot in the simulated environment with `sim` as the control mode.
+Launches a turtlebot in the simulated environment with `sim` as the control mode.
 2. `rosservice call \generate_maze`  
 Generates maze and creates markers in Rviz and Gazebo to display.
 3. `rosservice call \move`
 Starts turtlebot in motion and initiates sip and puff data collection.
-4. (Optional) `rosservice call \reset`  
-Resets simulation and data to run another trial.
+4. `rosservice call \process_data`  
+Process sip and puff data for csv output.
+5. `rosservice call \save_data`  
+Save processed data as csv.
+
+### Data Collection Only
+Collect data from sip and puff without running maze simulation:  
+1. `roslaunch maze_gen maze.launch`  
+Launch simulated environment (Control mode does not matter. Can also be run with control:=manual)  
+2. `rosservice call \collect_data`  
+Will save the latest sip and puff input received and prompt for ground truth value. Input ground truth with keyboard and press Enter.   
+*Note: Make sure to sip/puff into sensor prior to this step.*
+3. `rosservice call \save_data`  
+Save labeled data to csv.  
+
+### Testing Trained Model
+Use trained model to move turtlebot through maze simulation:  
+1. Ensure path to desired model is correct in the `load_model` function of the `maze` node.
+2. `roslaunch maze_gen maze.launch control:=manual`  
+Launches a turtlebot in the simulated environment with `manual` as the control mode.  
+3. `rosservice call \generate_maze`  
+Generates maze and creates markers in Rviz and Gazebo to display.  
+4. Provide sip and puff input. Model will make predictions and translate into corresponding movement actions represented by the turtlebot in simulation. 
+
+### Optional Services
+- `rosservice call \print_data`  
+Prints data collected along with labels
+- `rosservice call \reset`  
+Resets simulation and data to run another trial.  
+- `rosservice call \toggle_control_mode`  
+Toggles control mode between `sim` and `manual`. Running this service will switch to whichever control mode is not currently being used.
 
 More coming soon...
