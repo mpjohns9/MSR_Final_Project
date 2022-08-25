@@ -28,7 +28,14 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 
 ## Usage Instructions
 ### Simulation
-To run the maze simulation with a user providing input, follow the steps below:  
-1. 
+Collect user sip and puff input while running maze simulation:  
+1. `roslaunch maze_gen maze.launch`  
+This will launch a turtlebot in the simulated environment with `sim` as the control mode.
+2. `rosservice call \generate_maze`  
+Generates maze and creates markers in Rviz and Gazebo to display.
+3. `rosservice call \move`
+Starts turtlebot in motion and initiates sip and puff data collection.
+4. (Optional) `rosservice call \reset`  
+Resets simulation and data to run another trial.
 
 More coming soon...
