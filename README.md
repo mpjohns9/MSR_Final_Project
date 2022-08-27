@@ -20,7 +20,7 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 - `maze`: Responsible for generating maze in simulated Rviz/Gazebo environment. Subscribes to sip and puff input and auto-labels user data during simulation run. Can also be run without maze to speed up data collection process. 
 - `data_collection`: Collects and publishes data from sip and puff sensor to be used by `maze` node.
 
-### Helper Files
+### Python Library
 - `cnn.py`: Neural network used to classify sip and puff signals (1D CNN)
 - `data_augmentation.py`: Contains functions used to augment user data. Generates large dataset from small original sample to facilitate model training and reduce time required from user.
 - `generate_maze.py`: Generates maze of variable difficulty from preset tiles. Creates path through maze for robot to follow.
@@ -31,9 +31,9 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 Collect user sip and puff input while running maze simulation:  
 1. `roslaunch maze_gen maze.launch`  
 Launches a turtlebot in the simulated environment with `sim` as the control mode.
-2. `rosservice call \generate_maze`  
-Generates maze and creates markers in Rviz and Gazebo to display.
-3. `rosservice call \move`
+2. `rosservice call \generate_maze "difficulty:0"`    
+Generates easy maze and creates markers in Rviz and Gazebo to display. To generate medium or hard maze, use `"difficulty:1"` or `"difficulty:2"`, respectively.
+3. `rosservice call \move`  
 Starts turtlebot in motion and initiates sip and puff data collection.
 4. `rosservice call \process_data`  
 Process sip and puff data for csv output.
@@ -61,10 +61,36 @@ Generates maze and creates markers in Rviz and Gazebo to display.
 
 ### Optional Services
 - `rosservice call \print_data`  
-Prints data collected along with labels
+Prints data collected along with labels.
 - `rosservice call \reset`  
 Resets simulation and data to run another trial.  
 - `rosservice call \toggle_control_mode`  
 Toggles control mode between `sim` and `manual`. Running this service will switch to whichever control mode is not currently being used.
 
+## The Model
+
+## Examples & Demonstrations
+### Mazes
+The maze generation algorithm developed through this project is able to create a maze of easy, medium, or hard difficulty. The mazes draw from a subset of tiles that allow for increasingly more freedom of movement. For example, easy difficulty is contrained to right-angle turns and straight movements, whereas medium difficulty introduces diagonal movements.  
+
+Easy                    |  Medium            | Hard                  
+:-------------------------:|:-------------------------:|:-------------------------:
+<img src="maze_gen/assets/easy_maze.png" width="200" /> |  <img src="maze_gen/assets/medium_maze.png" width="200" /> | <img src="maze_gen/assets/hard_maze.png" width="200" />
+
+### Real-life Trials
+#### Author
+
+#### Other User
+
+
+## Next Steps
+
 More coming soon...
+
+<!-- TODO:
+- Video of me
+- Video of other user
+- Examples of maze at each difficulty
+- Examples of user profiles and input graphs for each command
+- Host sphinx documentation -->
+
