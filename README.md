@@ -75,7 +75,7 @@ The maze generation algorithm developed through this project is able to create a
 
 Easy                    |  Medium            | Hard                  
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="maze_gen/assets/easy_maze.png" width="200" /> |  <img src="maze_gen/assets/medium_maze.png" width="200" /> | <img src="maze_gen/assets/hard_maze.png" width="200" />
+<img src="maze_gen/assets/easy_maze.png" width="220" /> |  <img src="maze_gen/assets/medium_maze.png" width="220" /> | <img src="maze_gen/assets/hard_maze.png" width="220" />
 
 ### Real-life Trials
 #### Author
