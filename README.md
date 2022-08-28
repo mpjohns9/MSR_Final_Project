@@ -9,7 +9,7 @@ The primary objective of this project was to classify [sip-and-puff (SNP)](https
 ## Process
 1. To begin, a user must complete a set of simulated mazes that can be viewed through RViz and/or Gazebo.   
 *Note: Though the user feels as if they are in control of the robot, the robot control is predefined based on the maze generated. Future development would allow for the user to affect robot behavior as they progress through the maze curriculum.*
-2. The inputs a user provides to complete this maze are collected to train a neural network sepcific to that user.
+2. The inputs a user provides to complete this maze are collected to train a neural network sepcific to that user. The data is auto-labelled based on tags applied to sections of the maze during the generation process.
 3. User data is augmented to increase the size of the dataset, reducing the need for a more time intensive data collection process with the user. 
 4. The augmented dataset is used to train a 1-dimensional convolutional neural network (CNN) to classify SNP inputs into discrete movement actions (forward, left, right, stop).
 5. Using the trained network, the user can navigate the Gazebo world freely, and eventually, real life.
