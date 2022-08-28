@@ -94,10 +94,3 @@ https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-
 - Add contextual information (e.g., point cloud data) to allow user more flexibility with symbol creation. E.g., an input is given in advance in a hallway, but the robot waits for the next opening to turn.  
 - Create dynamic maze curriculum that allows user to differentiate between similar symbols. Mazes designed to differentiate between similar symbols will be auto-generated until clear distinction is achieved.
 
-More coming soon...
-
-<!-- TODO:
-- Video of me
-- Video of other user
-- Examples of user profiles and input graphs for each command -->
-
