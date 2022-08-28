@@ -87,7 +87,7 @@ Below are demonstrations of the data collection process using a randomly generat
 https://user-images.githubusercontent.com/36053672/187091322-4467145b-485f-4245-af63-16712cfb4bf7.mp4
 
 #### Other User
-
+https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-acd8-52b191bb6c48.mp4
 
 ## Next Steps
 - Easy difficulty was the only one tested during this project. Further testing is needed to confirm pipeline is working for medium and hard difficulties.  
