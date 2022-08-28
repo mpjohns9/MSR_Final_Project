@@ -68,7 +68,7 @@ Resets simulation and data to run another trial.
 Toggles control mode between `sim` and `manual`. Running this service will switch to whichever control mode is not currently being used.
 
 ## The Model
-This project uses a 1-dimensional convolutional neural network (1D CNN) to classify user inputs into movement actions: forward, left ,right, and stop. For each user, a new model is trained to make predictions specific to that user. The 1D CNN is trained on actual data collected from the user, as well as augmented data derived from the initial SNP input signals.  
+This project uses a 1-dimensional convolutional neural network (1D CNN) to classify user inputs into movement actions: forward, left, right, and stop. For each user, a new model is trained to make predictions specific to that user. The 1D CNN is trained on actual data collected from the user, as well as augmented data derived from the initial SNP input signals.  
 
 ![1D CNN](maze_gen/assets/model.png)
 
