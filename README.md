@@ -82,8 +82,7 @@ Easy                    |  Medium            | Hard
 
 ### Real-life Trials
 #### Author
-![Data Collection - Author](maze_gen/assets/author_demo.mp4)
-
+https://user-images.githubusercontent.com/36053672/187091322-4467145b-485f-4245-af63-16712cfb4bf7.mp4
 
 #### Other User
 
