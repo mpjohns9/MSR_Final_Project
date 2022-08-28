@@ -68,6 +68,9 @@ Resets simulation and data to run another trial.
 Toggles control mode between `sim` and `manual`. Running this service will switch to whichever control mode is not currently being used.
 
 ## The Model
+This project uses a 1-dimensional convolutional neural network (1D CNN) to classify user inputs into movement actions: forward, left ,right, and stop. For each user, a new model is trained to make predictions specific to that user. The 1D CNN is trained on actual data collected from the user, as well as augmented data derived from the initial SNP input signals.  
+
+![1D CNN](maze_gen/assets/model.png)
 
 ## Examples & Demonstrations
 ### Mazes
@@ -75,22 +78,25 @@ The maze generation algorithm developed through this project is able to create a
 
 Easy                    |  Medium            | Hard                  
 :-------------------------:|:-------------------------:|:-------------------------:
-<img src="maze_gen/assets/easy_maze.png" width="220" /> |  <img src="maze_gen/assets/medium_maze.png" width="220" /> | <img src="maze_gen/assets/hard_maze.png" width="220" />
+<img src="maze_gen/assets/easy_maze.png" width="250" /> |  <img src="maze_gen/assets/medium_maze.png" width="250" /> | <img src="maze_gen/assets/hard_maze.png" width="250" />
 
 ### Real-life Trials
 #### Author
+![Data Collection - Author](maze_gen/assets/author_demo.mp4)
+
 
 #### Other User
 
 
 ## Next Steps
+- Easy difficulty was the only one tested during this project. Further testing is needed to confirm pipeline is working for medium and hard difficulties.  
+- Add contextual information (e.g., point cloud data) to allow user more flexibility with symbol creation. E.g., an input is given in advance in a hallway, but the robot waits for the next opening to turn.  
+- Create dynamic maze curriculum that allows user to differentiate between similar symbols. Mazes designed to differentiate between similar symbols will be auto-generated until clear distinction is achieved.
 
 More coming soon...
 
 <!-- TODO:
 - Video of me
 - Video of other user
-- Examples of maze at each difficulty
-- Examples of user profiles and input graphs for each command
-- Host sphinx documentation -->
+- Examples of user profiles and input graphs for each command -->
 
