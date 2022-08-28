@@ -43,7 +43,7 @@ Save processed data as csv.
 ### Data Collection Only
 Collect data from sip and puff without running maze simulation:  
 1. `roslaunch maze_gen maze.launch`  
-Launch simulated environment (Control mode does not matter. Can also be run with control:=manual)  
+Launch simulated environment (Control mode does not matter. Can also be run with `control:=manual`)  
 2. `rosservice call \collect_data`  
 Will save the latest sip and puff input received and prompt for ground truth value. Input ground truth with keyboard and press Enter.   
 *Note: Make sure to sip/puff into sensor prior to this step.*
@@ -81,6 +81,8 @@ Easy                    |  Medium            | Hard
 <img src="maze_gen/assets/easy_maze.png" width="250" /> |  <img src="maze_gen/assets/medium_maze.png" width="250" /> | <img src="maze_gen/assets/hard_maze.png" width="250" />
 
 ### Real-life Trials
+Below are demonstrations of the data collection process using a randomly generated maze of easy difficulty. The chart overlays shown in the videos represent the input the user is providing through the SNP sensor.
+
 #### Author
 https://user-images.githubusercontent.com/36053672/187091322-4467145b-485f-4245-af63-16712cfb4bf7.mp4
 
