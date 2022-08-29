@@ -72,7 +72,7 @@ This project uses a 1-dimensional convolutional neural network (1D CNN) to class
 
 ![1D CNN](maze_gen/assets/model.png)
 
-## Examples & Demonstrations
+## Results & Demonstrations
 ### Mazes
 The maze generation algorithm developed through this project is able to create a maze of easy, medium, or hard difficulty. The mazes draw from a subset of tiles that allow for increasingly more freedom of movement. For example, easy difficulty is contrained to right-angle turns and straight movements, whereas medium difficulty introduces diagonal movements.  
 
@@ -83,11 +83,31 @@ Easy                    |  Medium            | Hard
 ### Real-life Trials
 Below are demonstrations of the data collection process using a randomly generated maze of easy difficulty. The chart overlays shown in the videos represent the input the user is providing through the SNP sensor.
 
-#### Author
+Phase                    |  Author            | Other User                  
+:-------------------------:|:-------------------------:|:-------------------------:
+Data Collection |  https://user-images.githubusercontent.com/36053672/187091322-4467145b-485f-4245-af63-16712cfb4bf7.mp4 | https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-acd8-52b191bb6c48.mp4
+Live Testing | TBD | TBD
+
+<!-- #### Author
 https://user-images.githubusercontent.com/36053672/187091322-4467145b-485f-4245-af63-16712cfb4bf7.mp4
 
 #### Other User
-https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-acd8-52b191bb6c48.mp4
+https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-acd8-52b191bb6c48.mp4 -->
+
+#### Results
+After collecting data using the process demonstrated above, a model was trained and tested live. As an example, a graphical representation of one set of symbols created by each user is shown below, along with results and qualitative commentary from the trials. Accuracy was determined by comparing user's intended action and the actual movement of the robot resulting from the model's prediction.
+
+Movement Action | User 1 | User 2 | User 3 | User 4 | User 5                
+:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:|:----------------------:
+Stop | ![](maze_gen/assets/sp_user1_0.png) | ![](maze_gen/assets/sp_user2_0.png) | ![](maze_gen/assets/sp_user3_0.png) | ![](maze_gen/assets/sp_user4_0.png) | ![](maze_gen/assets/sp_user5_0.png)
+Start | ![](maze_gen/assets/sp_user1_1.png) | ![](maze_gen/assets/sp_user2_1.png) | ![](maze_gen/assets/sp_user3_1.png) | ![](maze_gen/assets/sp_user4_1.png) | ![](maze_gen/assets/sp_user5_1.png)
+Left Turn | ![](maze_gen/assets/sp_user1_2.png) | ![](maze_gen/assets/sp_user2_2.png) | ![](maze_gen/assets/sp_user3_2.png) | ![](maze_gen/assets/sp_user4_2.png) | ![](maze_gen/assets/sp_user5_2.png)
+Right Turn | ![](maze_gen/assets/sp_user1_3.png) | ![](maze_gen/assets/sp_user2_3.png) | ![](maze_gen/assets/sp_user3_3.png) | ![](maze_gen/assets/sp_user4_3.png) | ![](maze_gen/assets/sp_user5_3.png)
+Notes | Successfully navigated maze with minimal error. **Overall, model predicted correct movement actions with 91% accuracy.** | Successfully navigated maze with minimal error. Right Turn was misclassified occasionally. **Overall, model predicted correct movement actions with 83% accuracy.** | Successfully navigated maze with minimal error. Occasionally, Forward would be misclassified as Stop. **Overall, model predicted correct movement actions with 87% accuracy.** | Successfully navigated maze with almost no error. Stop was misclassified as Left Turn, but rarely. **Overall, model predicted correct movement actions with 95% accuracy.** | Successfully navigated maze with minimal error. Stop was misclassified as Left Turn occasionally. **Overall, model predicted correct movement actions with 87% accuracy.**
+
+
+Users 1-4 were profiles created by the author to test the robustness of the pipeline. User 5 was not the author and was given no instructions other than to use the sip and puff device to guide the robot through the simulated maze. In both cases, the data augmentation process outlined above was used to generate more data. In every trial, the trained model was able to successfully predict movement actions from sip and puff inputs; the user was able to easily navigate a maze using their custom set of symbols.
+
 
 ## Next Steps
 - Easy difficulty was the only one tested during this project. Further testing is needed to confirm pipeline is working for medium and hard difficulties.  
