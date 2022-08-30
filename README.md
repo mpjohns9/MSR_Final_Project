@@ -102,8 +102,7 @@ https://user-images.githubusercontent.com/36053672/187097198-6cf444bb-74fa-43b1-
 #### Live Testing
 This video shows a user navigating a maze using their own set of symbols created through the data collection and model training phases. In this trial, the model achieved 100% accuracy. Overall, the accuracy for this user was 91% (See User 1 below).
 
-
-
+https://user-images.githubusercontent.com/36053672/187346436-09780be3-86b0-47b3-9ecc-7985434eb5f0.mp4
 
 After collecting data using the process demonstrated above, a model was trained and tested live. As an example, a graphical representation of one set of symbols created by each user is shown below, along with results and qualitative commentary from the trials. Accuracy was determined by comparing user's intended action and the actual movement of the robot resulting from the model's prediction.
 
