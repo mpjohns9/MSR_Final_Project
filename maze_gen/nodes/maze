@@ -156,7 +156,8 @@ class Maze:
                 self.live_vals = self.live_vals[-450:] 
             
         else:
-            self.live_vals.append(d.data)
+            if np.abs(d.data) > 5:
+                self.live_vals.append(d.data)
 
         if previous != self.live_vals:
             self.last_change = dt.datetime.now()
@@ -286,6 +287,7 @@ class Maze:
         ms.model_name = 'robot'
         ms.pose = self.initial_pos.pose.pose
         self.set_model_state(ms)
+        return EmptyResponse()
 
     def collect_data(self, req):
         filtered = self.trim_data(self.live_vals)
@@ -296,10 +298,12 @@ class Maze:
         self.labels.append(label)
         self.live_vals = []
         print()
+        return EmptyResponse()
 
     def print_data(self, req):
         print('Trials: ', self.trials)
         print('Labels: ', self.labels)
+        return EmptyResponse()
     
     def save_data(self, req):
         self.trials = pd.DataFrame(self.trials)
@@ -313,9 +317,11 @@ class Maze:
             self.test_num += 1
         else:
             print('Data was not saved.')
+        return EmptyResponse()
 
     def process_data(self, req):
         self.trials = [self.trim_data(t) for t in self.trials]
+        return EmptyResponse()
 
     def load_model(self):
         """Loads trained model.
@@ -325,7 +331,7 @@ class Maze:
         Returns:
             Sequential: Model loaded from directory
         """
-        return load_model(f'{self.dir}/data/cnn_synthetic_augmented_user4.h5')
+        return load_model(f'{self.dir}/data/cnn_synthetic_augmentedv2.h5')
 
     def trim_data(self, data):
         """Trims data input to only include every third item.
