@@ -73,7 +73,7 @@ This project uses a 1-dimensional convolutional neural network (1D CNN) to class
 ![1D CNN](maze_gen/assets/model.png)
 
 ## Data Augmentation Process
-The data augmentation process randomly applied transformations to the real data collected from a user until the desired number of data points was achieved. For this project, that number was 20,000 (starting from 20; 5 from each class).
+The data augmentation process randomly applied transformations to the real data collected from a user until the desired number of data points was achieved. For this project, that number was 20,000 (starting from 20 original samples; 5 from each class).
 
 1. Center &mdash; Separates noise and signal and centers signal in time. This first step was applied to each data point. 
 2. Apply one of the following:  
